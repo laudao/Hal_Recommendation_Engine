@@ -1,0 +1,7 @@
+Structure: lip6
+from 2000
+to
+Language: en
+Author:
+number of result: 200
+
