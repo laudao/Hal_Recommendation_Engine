@@ -12,7 +12,7 @@ class TopicGraph:
 		self.nb_passes = nb_passes
 		self.nb_topics = nb_topics
 		self.nb_words = nb_words
-		self.ModelLDA = 'unknown'
+		self.topics_list = 'unknown'
 
 	@property
 	def page(self):
@@ -31,8 +31,8 @@ class TopicGraph:
 		return self.__nb_words
 
 	@property
-	def modelLDA(self):
-		return self.__modelLDA
+	def topics_list(self):
+		return self.__topics_list
 
 	@page.setter
 	def page(self, x):
@@ -66,8 +66,37 @@ class TopicGraph:
 		else:
 			print("nb_words must be a positive integer")
 	
-	@modelLDA.setter
-	def modelLDA(self, x):
+	@topics_list.setter
+	def topics_list(self, x):
 		if x == "ok":
-			
+			model = ModelLDA(self.page, self.nb_topics, self.nb_passes, self.nb_words)
+			ldamodel, doc_term_matrix, dic = model.extract_lda_topics()
+			self.__topics_list = ldamodel.show_topics(formatted=False)
+	
+	def create_link_TopicGraaph(self):
+		authenticate("localhost:7474", "neo4j", "stage")
+		graph = Graph("http://localhost:7474/db/data/")
+		for topic in self.topics_list:
+			words = []
+			weight = []
+			for couple in topic[1]:
+				words.append(couple[0])
+				weight.append(couple[1])
+			t = Topic(topic[0], words, weight)
+			graph.push(t)
+
+		for i in range(self.nb_topics):
+			j=i+1
+			t1 = Topic.select(graph, i).first()
+			words1 = t1.sign_words
+			weights1 = t1.words_prob
+
+			while j != self.nb_topics:
+				t2 = Topic.select(graph, j).first()
+				words2 = t2.sign_words
+				weights2 = t2.words_prob
+
+
+page = PageHAL.create_page_file("rech.txt")
+tgr = TopicGraph(page, 60, 8, 10)
 

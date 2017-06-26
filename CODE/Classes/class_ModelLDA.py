@@ -170,15 +170,16 @@ filename = "rech.txt"
 page = PageHAL.create_page_file(filename)
 print()
 
-obj = ModelLDA(page, 8, 60, 10)
-#ldamodel, doc_term_matrix, dic = obj.extract_lda_topics()
-#print(type(ldamodel))
-#print(type(doc_term_matrix))
-#print(type(dic))
+obj = ModelLDA(page, 3, 60, 10)
+ldamodel, doc_term_matrix, dic = obj.extract_lda_topics()
+print(type(ldamodel))
+print(type(doc_term_matrix))
+print(type(dic))
+print(ldamodel.show_topics(formatted=False))
 #print(dic)
 #print(doc_term_matrix)
-obj.print_topic()
-obj.visualisation()
+#obj.print_topic()
+#obj.visualisation()
 #
 #obj.language = "fr"
 #

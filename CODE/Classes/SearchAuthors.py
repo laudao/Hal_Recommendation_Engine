@@ -59,8 +59,8 @@ class SearchAuthors:
 			
 	@struct_id.setter
 	def struct_id(self, x):
-		print("ici")
-		self.__struct_id = x
+		if type(x) == int:
+			self.__struct_id = x
 
 	@struct_type.setter
 	def struct_type(self, x):
@@ -126,13 +126,13 @@ class SearchAuthors:
 	@staticmethod
 	def create_single_struct(struct_type, struct_id, struct_name, struct_acro, struct_country):
 		if struct_type == "researchteam":
-			s = ResearchTeam(rteam_id=struct_id, rteam_name=struct_name,rteam_acronym = struct_acro,rteam_country=struct_country)
+			s = ResearchTeam(struct_id, struct_name,struct_acro,struct_country)
 		elif struct_type == "department":
-			s = Department(dept_id=struct_id,dept_name=struct_name,dept_acronym=struct_acro,dept_country=struct_country)
+			s = Department(struct_id,struct_name,struct_acro,struct_country)
 		elif struct_type == "laboratory":
-			s = Laboratory(lab_id=struct_id,lab_name=struct_name,lab_acronym=struct_acro,lab_country=struct_country)
+			s = Laboratory(struct_id,struct_name,struct_acro,struct_country)
 		else:
-			s = Institution(inst_id=struct_id,inst_name=struct_name,inst_acronym=struct_acro,inst_country=struct_country)
+			s = Institution(struct_id,struct_name,struct_acro,struct_country)
 		return s
 
 	""" given a dataframe, creates a structure """
@@ -272,7 +272,7 @@ class SearchAuthors:
 
 		return authors
 
-search = SearchAuthors("acronym", "IDH")
+search = SearchAuthors("acronym", "RESEA")
 print(search.struct)
 print(search.struct_id)
 print(search.struct_type)
