@@ -11,8 +11,10 @@ class URLtoAuthor(URLtoDF):
 	def __init__(self, url=None, df=None):
 		URLtoDF.__init__(self, url, df)
 
-	def create_one_auth_node(self, a_id, a_name, a_quality, a_struct):
-		a = Author(auth_id=a_id, auth_name=a_name, auth_quality=a_quality)
-		a.belongs_in.add(a_struct)
+	def create_link_one_auth_node(self, auth_id, auth_name, auth_quality, auth_struct):
+		a = Author(auth_id=auth_id, auth_name=auth_name, auth_quality=auth_quality)
+		auth.belongs_in.add(auth_struct)
+		auth_struct.members.add(auth)
 
+	def create_link_authors(self, 
 

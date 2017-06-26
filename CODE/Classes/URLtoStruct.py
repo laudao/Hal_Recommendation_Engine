@@ -34,7 +34,7 @@ class URLtoStruct(URLtoDF):
 		else:
 			s = Institution(inst_id=struct_id,inst_name=struct_name,inst_acronym=struct_acro,inst_country=struct_country)
 	
-		graph.push(s)
+#		graph.push(s)
 
 		if type(struct_parent_id) == list:
 			for parent_id, parent_type in zip(struct_parent_id, struct_parent_type):
@@ -53,7 +53,7 @@ class URLtoStruct(URLtoDF):
 
 		graph.push(s)
 
-url="https://api.archives-ouvertes.fr/ref/structure/?q=docid:181&fl=docid name_s parentDocid_i type_s acronym_s country_s parentType_s"
+url="https://api.archives-ouvertes.fr/ref/structure/?q=docid:389588&fl=docid name_s parentDocid_i type_s acronym_s country_s parentType_s"
 df = URLtoStruct(url)
 df.create_struct_node()
 print(type(df.df.iloc[0]['parentDocid_i']))

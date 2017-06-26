@@ -36,7 +36,7 @@ class URLtoDF:
 		""" generates dataframe from URL """
 		r = requests.get(self.url)
 		dicjson = r.json()
-		colonnes = ['docid', 'name_s', 'parentDocid_i', 'type_s', 'acronym_s', 'country_s','parentType_s']
+		colonnes = ['docid', 'abstract_s', 'title_s']
 		df = pd.DataFrame(dicjson['response']['docs'], columns=colonnes)
 		df.set_index([df['docid']], drop=True, append=False, inplace=True, verify_integrity=False)
 		df = df.drop('docid', axis=1)
@@ -45,8 +45,9 @@ class URLtoDF:
 	def printDF(self):
 		print(self.df)
 
+url = 'https://api.archives-ouvertes.fr/search/?q=docid:%221295622%22&fl=title_s%20abstract_s'
 #url = 'https://api.archives-ouvertes.fr/ref/structure/?q=name_s:"Fairfield University"&fl=docid name_s parentDocid_i'
-#df = URLtoDF(url)
-#df.printDF()
+df = URLtoDF(url)
+df.printDF()
 #if math.isnan(float(df.df.iloc[0]['parentDocid_i'])):	
 #	print("coucou")
