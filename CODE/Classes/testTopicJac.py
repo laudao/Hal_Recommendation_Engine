@@ -1,5 +1,5 @@
-A = [('a', 0.8), ('b', 0.5), ('c', 0.3)]
-B = [('a', 0.5), ('c', 0.8), ('b', 0)]
+A = [('a', 0.8), ('b', 0.5), ('c', 0.4)]
+B = [('a', 0.5), ('c', 0.7), ('b', 0.5)]
 
 #for tuple in B:
 #	if 'a' in tuple:
@@ -24,8 +24,6 @@ for couple in all:
 	maxi = max(couple[0][1], couple[1][1])
 	union = union + maxi
 
-print(inter)
-print(union)
 print(inter/union)
 
 #print((0.5+0.3)/(0.8+0.5+0.8))

@@ -1,4 +1,4 @@
-Structure: lip6
+Structure: CNRS
 from 2000
 to
 Language: en

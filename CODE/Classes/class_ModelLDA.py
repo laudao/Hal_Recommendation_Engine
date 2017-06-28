@@ -30,7 +30,7 @@ class ModelLDA:
 	
 	@property
 	def language(self):
-		return page.language
+		return self.page.language
 	
 	@property
 	def nb_topics(self):
@@ -58,9 +58,9 @@ class ModelLDA:
 	@corpus.setter
 	def corpus(self, x):
 		if x == "*#*":
-			ext = page.extract()
+			ext = self.page.extract()
 			if len(ext) == 0:
-				ext = page.extract_title()
+				ext = self.page.extract_title()
 				if len(ext) == 0:
 					print("The corpus is empty you must modify the page")
 				else:
@@ -73,7 +73,7 @@ class ModelLDA:
 	
 	@language.setter
 	def language(self, x):
-		page.language = x
+		self.page.language = x
 	
 	@nb_topics.setter
 	def nb_topics(self, x):
@@ -99,7 +99,7 @@ class ModelLDA:
 	@staticmethod
 	def clean_text_en(doc, punctuation, lemma):
 		words_stop = set(stopwords.words('english'))
-		parasit_word = "des une les fair par sur dans que moi plus non aux cette est one".split()
+		parasit_word = "des pour nous ont une les fair par sur dans que moi plus non aux cette est one".split()
 		for w in parasit_word:
 			words_stop.add(w)
 		stop_free = " ".join([i for i in doc.lower().split() if not(i in words_stop)])  # enlever les mots inutile
@@ -114,7 +114,7 @@ class ModelLDA:
 	@staticmethod
 	def clean_text_fr(doc, punctuation, lemma):
 		words_stop_fr = set(stopwords.words('french'))
-		parasit_word = "plus cette cet qui pour cela les d'un afin ainsi ils avon d'un the and".split()
+		parasit_word = "plus using two cette cet qui pour cela les d'un afin ainsi ils avon d'un the and".split()
 		for w in parasit_word:
 			words_stop_fr.add(w)
 		punc_free = ''
@@ -138,7 +138,7 @@ class ModelLDA:
 			res = [ModelLDA.clean_text_en(t, punctuation, lemma) for (d, t) in self.corpus]
 		else:
 			res = [ModelLDA.clean_text_fr(t, punctuation, lemma) for (d, t) in self.corpus]
-		print("res" + str(type(res)))
+#		print("res" + str(type(res)))
 		return res
 		
 	def extract_lda_topics(self):
@@ -168,14 +168,23 @@ class ModelLDA:
 
 filename = "rech.txt"
 page = PageHAL.create_page_file(filename)
-print()
+#print()
 
 obj = ModelLDA(page, 3, 60, 10)
 ldamodel, doc_term_matrix, dic = obj.extract_lda_topics()
-print(type(ldamodel))
-print(type(doc_term_matrix))
-print(type(dic))
+
 print(ldamodel.show_topics(formatted=False))
+ex = ['In', 'the', 'present', 'work,', 'we', 'investigate', 'real', 'numbers', 'whose', 'sequence', 'of', 'partial', 'quotients', 'enjoys', 'some', 'combinatorial', 'properties', 'involving', 'the', 'notion', 'of', 'palindrome.', 'We', 'provide', 'three', 'new', 'transendence', 'criteria,', 'that', 'apply', 'to', 'a', 'broad', 'class', 'of', 'continued', 'fraction', 'expansions,', 'including', 'expansions', 'with', 'unbounded', 'partial', 'quotients.', 'Their', 'proofs', 'heavily', 'depend', 'on', 'the', 'Schmidt', 'Subspace', 'Theorem.']
+
+bow = ldamodel.id2word.doc2bow(ex)
+doc_topics, word_topics, phi_values = ldamodel.get_document_topics(bow, per_word_topics=True)
+print(word_topics)
+
+
+print(bow)
+#print(type(ldamodel))
+#print(type(doc_term_matrix))
+#print(type(dic))
 #print(dic)
 #print(doc_term_matrix)
 #obj.print_topic()

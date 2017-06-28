@@ -7,11 +7,11 @@ import urllib as ur
 import requests
 import json
 from datetime import datetime
-
+import enchant
 
 class PageHAL:
-	def __init__(self, lab=None,start_year=None, end_year=None, language='en', author=None, size=None):
-		self.lab = lab
+	def __init__(self, struct=None,start_year=None, end_year=None, language='en', author=None, size=None):
+		self.struct = struct
 		self.start_year = start_year
 		self.end_year = end_year
 		self.language = language
@@ -20,8 +20,8 @@ class PageHAL:
 		self.url = "edit"
 	
 	@property
-	def lab(self):
-		return self.__lab
+	def struct(self):
+		return self.__struct
 
 	@property
 	def start_year(self):
@@ -47,14 +47,14 @@ class PageHAL:
 	def url(self):
 		return self.__url
 
-	@lab.setter
-	def lab(self, x):
+	@struct.setter
+	def struct(self, x):
 		if type(x) == int:
-			self.__lab = x
+			self.__struct = x
 		elif type(x) == str and len(x) > 0:
-			self.__lab = x
+			self.__struct = x
 		else:
-			self.__lab = None
+			self.__struct = None
 		try:
 			self.url = 'edit'
 		except AttributeError:
@@ -147,20 +147,20 @@ class PageHAL:
 	
 	@url.setter
 	def url(self, x):
-		self.__url = PageHAL.generate_url(self.lab,self.start_year, self.end_year,
+		self.__url = PageHAL.generate_url(self.struct,self.start_year, self.end_year,
 		                                  self.language, self.author, self.size)
 		if x != "edit":
 			print("you cant modify the url")
 	
 	@staticmethod
-	def generate_url(lab,pstart, pend, language, author, size):
+	def generate_url(struct,pstart, pend, language, author, size):
 		"""create url for the search in HAL.
 		Return title, keys words and abstract in language"""
 		url = 'https://api.archives-ouvertes.fr/search/?fl=title_s,' + language + '_keyword_s,abstract_s'
-		if type(lab) == str:
-			url += '&fq=labStructAcronym_s:' + lab.upper()  # restrict labo name
-		elif type(lab) == int:
-			url += '&fq=labStructId_i:' + str(lab)  # restrict id labo
+		if type(struct) == str:
+			url += '&fq=structAcronym_s:' + struct # restrict struct name
+		elif type(struct) == int:
+			url += '&fq=structId_i:' + str(struct)  # restrict id struct
 		if not(pstart is None):  # restrict period
 			url += '&fq=producedDateY_i:[' + str(pstart) + ' TO ' + str(pend) + ']'
 		else:
@@ -185,7 +185,21 @@ class PageHAL:
 		res = self.collect()
 		file.write(res)
 		file.close()
-	
+
+	def string_is_valid(self, string):
+		w1, w2 = PageHAL.get_first_last_words(string)
+		for w in [w1, w2]:
+			if (self.language == "en" and (enchant.Dict("en_US").check(w) or enchant.Dict("en_GB").check(w)) or (self.language == "fr" and enchant.Dict("fr_FR").check(w))):
+				return True
+		return False
+
+	@staticmethod
+	def get_first_last_words(string):
+		split_string = string.split(' ')
+		w1 = split_string[0]
+		w2 = split_string[len(split_string)-1]
+		return w1, w2
+
 	def extract(self):
 		"""return a list of Tuple (id_doc, text_doc) for doc in HAL page which have a text"""
 		r = requests.get(self.url)
@@ -194,18 +208,62 @@ class PageHAL:
 		doc = 0
 		for dic in dicjson['response']['docs']:
 			title = dic['title_s'][0]
-			text = ''
-			keyword = self.language + '_keyword_s'
-			if keyword in dic:
-				for word in dic[keyword]:
-					text += word + ' '
-			if 'abstract_s' in dic:
-				abstract = dic['abstract_s'][0]
-				if not(abstract in ['no abstract', 'absent']):
-					text += abstract
-			if text:
-				res.append((doc, title + text))
-				doc += 1
+	#		title = dic['title_s'][0]
+	#		w1 = title.split(' ', 1)[0] # first word 
+	#		w2 = title.split(' ', 1)[len(title)-1] # last word
+			#if (self.language == "en" and (enchant.Dict("en_US").check(w) or enchant.Dict("en_GB").check(w)) or (self.language == "fr" and enchant.Dict("fr_FR").check(w))):
+			
+			if self.string_is_valid(title):
+				text = ''
+				keyword = self.language + '_keyword_s'
+				if keyword in dic:
+					if (self.string_is_valid(dic[keyword][0])):
+						for word in dic[keyword]:
+							text += word + ' '
+					else:
+						continue 
+				if 'abstract_s' in dic:
+					abstract = ""
+					if len(dic['abstract_s']) > 1:
+#						w = dic['abstract_s'][0].split(' ', 1)[0]
+#						print(w)
+						if self.string_is_valid(dic['abstract_s'][0]):
+							abstract = dic['abstract_s'][0]
+						elif self.string_is_valid(dic['abstract_s'][1]):
+							abstract = dic['abstract_s'][1]
+
+		#				if self.language == "en":
+		#					if enchant.Dict("en_US").check(w) or enchant.Dict("en_GB").check(w):
+		#						abstract = dic['abstract_s'][0]
+		#					else:
+		#						abstract = dic['abstract_s'][1]
+		#				else:
+		#					if enchant.Dict("fr_FR").check(w):
+		#						abstract = dic['abstract_s'][0]
+		#					else:
+		#						abstract = dic['abstract_s'][1]
+					elif len(dic['abstract_s'][0]) != 0:
+						if self.string_is_valid(dic['abstract_s'][0]):
+							abstract = dic['abstract_s'][0]
+						else:
+							continue
+	#					w = dic['abstract_s'][0].split(' ', 1)[0]
+	#					if self.language == "en":
+	#						if enchant.Dict("en_US").check(w) or enchant.Dict("en_GB").check(w):
+	#							abstract = dic['abstract_s'][0]
+	#						else:
+	#							print(w+" pas anglais")
+	#					else:
+	#						if enchant.Dict("fr_FR").check(w):
+	#							abstract = dic['abstract_s'][0]
+					
+					if abstract != "" and not(abstract in ['no abstract', 'absent']):
+						text += abstract
+				if text:
+					res.append((doc, title + text))
+					doc += 1
+			else:
+				print(title + " is not valid")
 		return res
 	
 	def extract_title(self):
@@ -230,10 +288,10 @@ class PageHAL:
 		return res
 	
 	def generate_file_name(self):
-		"""return 'self.lab'-from_'self.start_year'_to_'self.end_year'-'self.language'-size_'self.size'.txt"""
+		"""return 'self.struct'-from_'self.start_year'_to_'self.end_year'-'self.language'-size_'self.size'.txt"""
 		filename = ''
-		if not(self.lab is None):
-			filename += str(self.lab.upper) + '-'
+		if not(self.struct is None):
+			filename += str(self.struct) + '-'
 		if not(self.start_year is None):
 			filename += 'from_' + str(self.start_year) + '_to_' + str(self.end_year) + "-"
 		filename += self.language
@@ -252,8 +310,8 @@ class PageHAL:
 			filename = self.generate_file_name()
 		file = open(filename, 'w')
 		writing = ''
-		if not(self.lab is None):
-			writing += 'Structure: ' + str(self.lab) + '\n\n'
+		if not(self.struct is None):
+			writing += 'Structure: ' + str(self.struct) + '\n\n'
 		if self.start_year is None:
 			writing += 'from *'
 		else:
@@ -279,13 +337,13 @@ class PageHAL:
 			end_date = int(end_date)
 		except ValueError:
 			end_date = None
-		lab = input('acronym structure (ex: lip6)(none if not):')
-		if lab == 'none':
-			lab = input('id structure (integer)(none if not):')
+		struct = input('acronym structure (ex: lip6)(none if not):')
+		if struct == 'none':
+			struct = input('id structure (integer)(none if not):')
 			try:
-				lab = int(lab)
+				struct = int(struct)
 			except ValueError:
-				lab = None
+				struct = None
 		author = input('Full name of the author (none if not):')
 		if author == 'none':
 			author = None
@@ -295,16 +353,16 @@ class PageHAL:
 			size = int(size)
 		except ValueError:
 			pass
-		return PageHAL(lab, start_date, end_date, language, author, size)
+		return PageHAL(struct, start_date, end_date, language, author, size)
 	
 	@staticmethod
 	def create_page_file(file_name):
 		"""collect information for create HAL page in file named file_name"""
 		f = open(file_name, 'r')
 		l = f.readline()
-		lab = l[11:-1]
+		struct = l[11:-1]
 		try:
-			lab = int(lab)
+			struct = int(struct)
 		except ValueError:
 			pass
 		l = f.readline()
@@ -330,4 +388,4 @@ class PageHAL:
 		except ValueError:
 			size = None
 		f.close()
-		return PageHAL(lab, start_date, end_date, language, author, size)
+		return PageHAL(struct, start_date, end_date, language, author, size)

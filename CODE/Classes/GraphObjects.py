@@ -121,6 +121,6 @@ class Topic(GraphObject):
 		self.sign_words = sign_words
 		self.words_prob = words_prob
 
-	related_topics = Related(Topic)
+	related_topics = Related(Topic, "SIMILARITY")
 
 	

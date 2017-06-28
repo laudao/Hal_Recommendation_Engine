@@ -27,4 +27,11 @@ for topic in l:
 #print(Topic.select(graph, 0)).first()
 rt = ResearchTeam.select(graph, 388262).first()
 print(rt.struct_name)
-
+w = ['a', 'b', 'c']
+p = [0.1, 0.6, 0.8]
+t1 = Topic(104, w, p)
+t2 = Topic(105, ['b', 'c'], [0.4, 0.3])
+graph.push(t1)
+graph.push(t2)
+t1.related_topics.add(t2, kwproperties=0.3)
+graph.push(t1)
