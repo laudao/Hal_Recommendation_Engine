@@ -106,8 +106,14 @@ class PageHAL:
 	def language(self, x):
 		if x.upper() in "FR FRENCH FRANCAIS".split():
 			self.__language = "fr"
+			f = open('topic_language.txt', 'w')
+			f.write("fr")
+			f.close()
 		else:
 			self.__language = "en"
+			f = open('topic_language.txt', 'w')
+			f.write("en")
+			f.close()
 			if not(x.upper() in "EN ENGLISH ANGLAIS".split()):
 			    print("language must be en or fr.", x, "is not. So language is en by default")
 		try:
@@ -170,6 +176,7 @@ class PageHAL:
 		url += '&fq=language_s:' + language
 		if not(size is None):
 			url += '&rows=' + str(size)  # nb result
+		print(url)
 		return url
 		
 	def collect(self):
@@ -186,12 +193,14 @@ class PageHAL:
 		file.write(res)
 		file.close()
 
-	def string_is_valid(self, string):
+	@staticmethod
+	def string_is_valid(language, string):
 		w1, w2 = PageHAL.get_first_last_words(string)
+		valid = True
 		for w in [w1, w2]:
-			if (self.language == "en" and (enchant.Dict("en_US").check(w) or enchant.Dict("en_GB").check(w)) or (self.language == "fr" and enchant.Dict("fr_FR").check(w))):
-				return True
-		return False
+			if not(language == "en" and (enchant.Dict("en_US").check(w) or enchant.Dict("en_GB").check(w)) or (language == "fr" and enchant.Dict("fr_FR").check(w))):
+				valid = False
+		return valid
 
 	@staticmethod
 	def get_first_last_words(string):
@@ -208,16 +217,11 @@ class PageHAL:
 		doc = 0
 		for dic in dicjson['response']['docs']:
 			title = dic['title_s'][0]
-	#		title = dic['title_s'][0]
-	#		w1 = title.split(' ', 1)[0] # first word 
-	#		w2 = title.split(' ', 1)[len(title)-1] # last word
-			#if (self.language == "en" and (enchant.Dict("en_US").check(w) or enchant.Dict("en_GB").check(w)) or (self.language == "fr" and enchant.Dict("fr_FR").check(w))):
-			
-			if self.string_is_valid(title):
+			if PageHAL.string_is_valid(self.language, title):
 				text = ''
 				keyword = self.language + '_keyword_s'
 				if keyword in dic:
-					if (self.string_is_valid(dic[keyword][0])):
+					if (PageHAL.string_is_valid(self.language, dic[keyword][0])):
 						for word in dic[keyword]:
 							text += word + ' '
 					else:
@@ -225,45 +229,23 @@ class PageHAL:
 				if 'abstract_s' in dic:
 					abstract = ""
 					if len(dic['abstract_s']) > 1:
-#						w = dic['abstract_s'][0].split(' ', 1)[0]
-#						print(w)
-						if self.string_is_valid(dic['abstract_s'][0]):
+						if PageHAL.string_is_valid(self.language, dic['abstract_s'][0]):
 							abstract = dic['abstract_s'][0]
-						elif self.string_is_valid(dic['abstract_s'][1]):
+						elif PageHAL.string_is_valid(self.language, dic['abstract_s'][1]):
 							abstract = dic['abstract_s'][1]
-
-		#				if self.language == "en":
-		#					if enchant.Dict("en_US").check(w) or enchant.Dict("en_GB").check(w):
-		#						abstract = dic['abstract_s'][0]
-		#					else:
-		#						abstract = dic['abstract_s'][1]
-		#				else:
-		#					if enchant.Dict("fr_FR").check(w):
-		#						abstract = dic['abstract_s'][0]
-		#					else:
-		#						abstract = dic['abstract_s'][1]
 					elif len(dic['abstract_s'][0]) != 0:
-						if self.string_is_valid(dic['abstract_s'][0]):
+						if PageHAL.string_is_valid(self.language, dic['abstract_s'][0]):
 							abstract = dic['abstract_s'][0]
 						else:
+							print(title + " not added because abstract is invalid")
 							continue
-	#					w = dic['abstract_s'][0].split(' ', 1)[0]
-	#					if self.language == "en":
-	#						if enchant.Dict("en_US").check(w) or enchant.Dict("en_GB").check(w):
-	#							abstract = dic['abstract_s'][0]
-	#						else:
-	#							print(w+" pas anglais")
-	#					else:
-	#						if enchant.Dict("fr_FR").check(w):
-	#							abstract = dic['abstract_s'][0]
-					
 					if abstract != "" and not(abstract in ['no abstract', 'absent']):
 						text += abstract
 				if text:
 					res.append((doc, title + text))
 					doc += 1
 			else:
-				print(title + " is not valid")
+				print(title + " not added because title is invalid")
 		return res
 	
 	def extract_title(self):

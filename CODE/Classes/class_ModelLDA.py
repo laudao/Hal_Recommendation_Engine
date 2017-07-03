@@ -60,6 +60,7 @@ class ModelLDA:
 		if x == "*#*":
 			ext = self.page.extract()
 			if len(ext) == 0:
+				print("ici")
 				ext = self.page.extract_title()
 				if len(ext) == 0:
 					print("The corpus is empty you must modify the page")
@@ -99,7 +100,7 @@ class ModelLDA:
 	@staticmethod
 	def clean_text_en(doc, punctuation, lemma):
 		words_stop = set(stopwords.words('english'))
-		parasit_word = "des pour nous ont une les fair par sur dans que moi plus non aux cette est one".split()
+		parasit_word = "des pour two using nous ont une les fair par sur dans que moi plus non aux cette est one".split()
 		for w in parasit_word:
 			words_stop.add(w)
 		stop_free = " ".join([i for i in doc.lower().split() if not(i in words_stop)])  # enlever les mots inutile
@@ -107,7 +108,7 @@ class ModelLDA:
 		normalized = " ".join(lemma.lemmatize(word) for word in punc_free.split())  # associ un lemne aux mots (dogs -> dog)
 		res = []
 		for w in normalized.split():
-			if len(w) > 2:
+			if len(w) > 4:
 				res.append(w)
 		return res
 	
@@ -165,23 +166,23 @@ class ModelLDA:
 			x = ldamodel.print_topics(num_topics=self.nb_topics, num_words=self.nb_word)  # recover topics
 			pprint.pprint(x)
 
+#filename = "rech.txt"
+#page = PageHAL.create_page_file(filename)
+##print()
+#
+#obj = ModelLDA(page, 8, 40, 5)
+#ldamodel, doc_term_matrix, dic = obj.extract_lda_topics()
+#print(ldamodel)
+#print(ldamodel.show_topics(formatted=False))
+#ex = ['PRIMARY', 'OBJECTIVES:', 'Awake', 'surgeries', 'of', 'slow-growing', 'tumours', 'invading', 'the', 'brain', 'and', 'guided', 'by', 'direct', 'electrical', 'stimulation', 'induce', 'major', 'brain', 'reorganizations', 'accompanied', 'with', 'slight', 'impairments', 'post-operatively.', 'In', 'most', 'cases,', 'these', 'deficits', 'are', 'so', 'slight', 'after', 'a', 'few', 'days', 'that', 'they', 'are', 'often', 'not', 'detectable', 'on', 'classical', 'neuropsychological', 'evaluations.', 'Consequently,', 'this', 'study', 'investigated', 'whether', 'simple', 'visuo-manual', 'reaction', 'time', 'paradigms', 'would', 'sign', 'some', 'level', 'of', 'functional', 'asymmetries', 'between', 'both', 'hemispheres.', 'Importantly,', 'the', 'visual', 'stimulus', 'was', 'located', 'in', 'the', 'saggital', 'plane', 'in', 'order', 'to', 'limit', 'attentional', 'biases', 'and', 'to', 'focus', 'mainly', 'on', 'the', 'inter-hemispheric', 'asymmetry.', 'METHODS', 'AND', 'PROCEDURES:', 'Three', 'patients', '(aged', '41,', '59', 'and', '59', 'years)', 'after', 'resections', 'in', 'parietal', 'regions', 'and', 'a', 'control', 'group', '(age\u2009=\u200944,', 'SD\u2009=\u20096.9)', 'were', 'compared', 'during', 'simple', 'uni-', 'and', 'bimanual', 'reaction', 'times', '(RTs).', 'MAIN', 'OUTCOMES', 'AND', 'RESULTS:', 'Longer', 'RTs', 'were', 'observed', 'for', 'the', 'contralesional', 'compared', 'to', 'the', 'ipsilesional', 'hand', 'in', 'the', 'unimanual', 'condition.', 'This', 'asymmetry', 'was', 'reversed', 'for', 'the', 'bimanual', 'condition', 'despite', 'longer', 'RTs.', 'CONCLUSION', 'AND', 'CLINICAL', 'IMPLICATIONS:', 'Reaction', 'time', 'paradigms', 'are', 'useful', 'in', 'these', 'patients', 'to', 'monitor', 'more', 'precisely', 'their', 'functional', 'deficits,', 'especially', 'their', 'level', 'of', 'functional', 'asymmetry,', 'and', 'to', 'understand', 'brain', '(re)organization', 'following', 'slow-growing', 'lesions.']
 
-filename = "rech.txt"
-page = PageHAL.create_page_file(filename)
-#print()
+#bow = ldamodel.id2word.doc2bow(ex)
+#print(len(bow))
+#doc_topics, word_topics, phi_values = ldamodel.get_document_topics(bow, per_word_topics=True)
+#print(bow)
+#print(word_topics)
+#print(doc_topics)
 
-obj = ModelLDA(page, 3, 60, 10)
-ldamodel, doc_term_matrix, dic = obj.extract_lda_topics()
-
-print(ldamodel.show_topics(formatted=False))
-ex = ['In', 'the', 'present', 'work,', 'we', 'investigate', 'real', 'numbers', 'whose', 'sequence', 'of', 'partial', 'quotients', 'enjoys', 'some', 'combinatorial', 'properties', 'involving', 'the', 'notion', 'of', 'palindrome.', 'We', 'provide', 'three', 'new', 'transendence', 'criteria,', 'that', 'apply', 'to', 'a', 'broad', 'class', 'of', 'continued', 'fraction', 'expansions,', 'including', 'expansions', 'with', 'unbounded', 'partial', 'quotients.', 'Their', 'proofs', 'heavily', 'depend', 'on', 'the', 'Schmidt', 'Subspace', 'Theorem.']
-
-bow = ldamodel.id2word.doc2bow(ex)
-doc_topics, word_topics, phi_values = ldamodel.get_document_topics(bow, per_word_topics=True)
-print(word_topics)
-
-
-print(bow)
 #print(type(ldamodel))
 #print(type(doc_term_matrix))
 #print(type(dic))

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# filename : searchAuthors.py
+# filename : AuthorsGraph.py
 # author : Laura NGUYEN
 # creation date : 21/06/2017
 # provides a class to extract authors of a given structure
@@ -12,13 +12,13 @@ import json
 import math
 from GraphObjects import *
 
-class SearchAuthors:
-	def __init__(self, field, struct):
+class AuthorsGraph:
+	def __init__(self, field, struct, struct_id=None, struct_type=None, authors=None):
 		self.field = field
 		self.struct = struct
-		self.struct_id = None
-		self.struct_type = "unknown"
-		self.authors = "unknown"
+		self.struct_id = struct_id
+		self.struct_type = struct_type
+#		self.authors = authors
 
 	@property
 	def field(self):
@@ -36,9 +36,9 @@ class SearchAuthors:
 	def struct_type(self):
 		return self.__struct_type
 
-	@property
-	def authors(self):
-		return self.__authors
+#	@property
+#	def authors(self):
+#		return self.__authors
 
 	@field.setter
 	def field(self, x):
@@ -46,47 +46,43 @@ class SearchAuthors:
 
 	@struct.setter
 	def struct(self, x):
-		self.__struct = x
-
-		if not((type(x)==int and self.field=='id') or (type(x)==str and (self.field=='acronym') or (self.field=='name'))):
-			print("The fields haven't been filled in correctly.")
-			try:
-				self.struct_type = 'error'
-			except AttributeError:
-				pass
+		print("struct : " + str(x))
+		if not((type(x)==int and self.field=='id') or (type(x)==str and (self.field=='acronym' or self.field=='name'))):
+			print("/!\ The fields haven't been filled in correctly /!\ ")
+			print(str(x) + " is of type " + str(type(x)) + " but field is " + self.field)
+			self.__struct = None
 		else:
-			self.struct_type = "go"
+			self.__struct = x
 			
 	@struct_id.setter
 	def struct_id(self, x):
+		print("struct_id : " + str(x))
 		if type(x) == int:
 			self.__struct_id = x
+		else:
+			self.__struct_id = 'unknown id'
 
 	@struct_type.setter
 	def struct_type(self, x):
-		if x == "go":
+		print("struct_type : " +str(x))
+		if not(self.struct is None):	
 			self.__struct_type = self.findStructType()
-			if self.struct_type != "error":
-				try:
-					self.authors = "ok"
-				except AttributeError:
-					pass
 		else:
-			pass
+			self.__struct_type = 'unknown type'
 
-	@authors.setter
-	def authors(self, x):
-		if x == "ok":
-			self.__authors = self.get_authors()
-		elif x == "ko":
-			print("Can't find authors")
-		else:
-			pass
+#	@authors.setter
+#	def authors(self, x):
+#		print("authors : " + str(x))
+#		if (self.struct_type != 'unknown type'):
+#			self.__authors = self.get_authors()
+#		else:
+#			self.__authors = 'unknown authors'
 
 	def findStructType(self):
-		df = SearchAuthors.generate_DF(True, self.field, self.struct)
+		df = AuthorsGraph.generate_DF(True, self.field, self.struct)
 		if df.empty:
-			return "error"
+			print("Empty dataframe")
+			return 'unknown type'
 		else:
 			struct_type = self.create_link_struct(df)
 			return struct_type
@@ -113,7 +109,7 @@ class SearchAuthors:
 	""" given a URL and column names, creates dataframe """
 	@staticmethod
 	def generate_DF(bool_struct, field, struct):
-		url, col = SearchAuthors.generateURL(bool_struct, field, struct)
+		url, col = AuthorsGraph.generateURL(bool_struct, field, struct)
 		""" generates dataframe from URL """
 		r = requests.get(url)
 		dicjson = r.json()
@@ -126,13 +122,13 @@ class SearchAuthors:
 	@staticmethod
 	def create_single_struct(struct_type, struct_id, struct_name, struct_acro, struct_country):
 		if struct_type == "researchteam":
-			s = ResearchTeam(struct_id, struct_name,struct_acro,struct_country)
+			s = ResearchTeam(struct_id, struct_acro, struct_name, struct_country)
 		elif struct_type == "department":
-			s = Department(struct_id,struct_name,struct_acro,struct_country)
+			s = Department(struct_id,struct_acro,struct_name,struct_country)
 		elif struct_type == "laboratory":
-			s = Laboratory(struct_id,struct_name,struct_acro,struct_country)
+			s = Laboratory(struct_id,struct_acro,struct_name,struct_country)
 		else:
-			s = Institution(struct_id,struct_name,struct_acro,struct_country)
+			s = Institution(struct_id,struct_acro,struct_name,struct_country)
 		return s
 
 	""" given a dataframe, creates a structure """
@@ -148,7 +144,7 @@ class SearchAuthors:
 		struct_country = df.iloc[0]['parentType_s']
 		struct_parent_type = df.iloc[0]['parentType_s']
 
-		s = SearchAuthors.create_single_struct(struct_type, struct_id, struct_name, struct_acro, struct_country)
+		s = AuthorsGraph.create_single_struct(struct_type, struct_id, struct_name, struct_acro, struct_country)
 		# self.struct is part of other structures
 		if type(struct_parent_id) == list:
 			for parent_id, parent_type in zip(struct_parent_id, struct_parent_type):
@@ -166,64 +162,74 @@ class SearchAuthors:
 					s.is_part_of.add(parent)
 		
 		graph.push(s)
-		self.__struct_id = struct_id
+		self.struct_id = struct_id
 		return struct_type
 
 	""" given a structure, creates authors that belong to it """
-	def get_authors(self):
-		df = SearchAuthors.generate_DF(False, "id", self.struct_id)
-		authors = self.create_authors_articles(df)
-		return authors
+	def create_graph(self):
+		if not(self.struct is None) and self.struct_id != 'unknown id' and self.struct_type != 'unknown type':
+			df = AuthorsGraph.generate_DF(False, "id", self.struct_id)
+			self.create_authors_articles(df)
+			return True
+		else:
+			print("Error: can't create graph")
+			return False
 
-	""" looks for self.struct_id in parents of struct_id 
-			returns true if author's struct is part of struct_id
-			returns false otherwise 
-	"""
-	def check_parents(self, struct_id, child):
+	""" links author'structure with its parents """
+	def link_parents(self, struct_id, child):
 		authenticate("localhost:7474", "neo4j", "stage")
 		graph = Graph("http://localhost:7474/db/data/")
 		
-		df = SearchAuthors.generate_DF(True, "id", struct_id)
+		df = AuthorsGraph.generate_DF(True, "id", struct_id)
 		s_type = df.iloc[0]['type_s']
 		s_acronym = df.iloc[0]['acronym_s']
 		s_name = df.iloc[0]['name_s']
 		s_country = df.iloc[0]['country_s']
 
-		parent_id = df.iloc[0]['parentDocid_i']
-		
-		s = SearchAuthors.create_single_struct(s_type, struct_id, s_name, s_acronym, s_country)
+		""" parents of structure struct_id """
+		parent_id = df.iloc[0]['parentDocid_i'] 
+		s = AuthorsGraph.create_single_struct(s_type, struct_id, s_name, s_acronym, s_country)
 		graph.push(s)
 
 		if child != None:
 			s.children.add(child)
 			child.is_part_of.add(s)
 			graph.push(child)
+			graph.push(s)
 
 		#structure has no parents
-		if type(parent_id) != list:
-			return False
-		# self.struct_id might be one of parents
-		elif self.struct_id in parent_id: 
-			return True 
-		else:
-			# look for self.struct_id in parents of parent structures
-			for parent in parent_id:
-				check = self.check_parents(parent, s)
-				if check == True: 
-					return True
-			return False
+#		if type(parent_id) != list:
+#			return False
+		# self.struct_id might be part of parent_id
+#		elif str(self.struct_id) in parent_id: 
+#			return True 
+#		else:
+		if struct_id != self.struct_id:
+			if type(parent_id) == list:
+				for parent in parent_id:
+					self.link_parents(int(parent), s)
+#				if check == True: 
+#					return True
+#			return False
 
 	""" creates authors, their articles and structures
-	    links everything 
+	    links everything together
 	"""
 	def create_authors_articles(self, dataframe):
 		authenticate("localhost:7474", "neo4j", "stage")
 		graph = Graph("http://localhost:7474/db/data/")
-		authors = []
-		i=0
+		
 		""" for each row in the dataframe """
 		for row in dataframe.itertuples():	
 			docid = int(row[1])
+			print(docid)
+			doc = Article.select(graph, docid).first()
+
+			""" doc already exists, no need to create it """
+			if not(doc is None):	
+				print("doc " + str(docid) + " already in database")
+				continue
+
 			""" document has abstract"""
 			if (type(row[5]) == list):
 				abstract = row[5][0]
@@ -232,48 +238,50 @@ class SearchAuthors:
 			title = row[6][0]
 			pub_date = row[7]
 			keywords = row[8]
+
 			""" document doesn't have any keywords """
 			if type(keywords) != list:
 				keywords = []
 			docType = row[9]
 			lang = row[10][0]
+			
 			""" creates article """
 			doc = Article(docid, title, abstract, keywords, docType, pub_date, lang)
-		
+			
+			""" authors quality are unknown"""
 			if type(row[11]) != list:
 				list_qual = ["unknown"] * len(row[2])
 			""" for each author having wrote the article """
 			for a_id, auth, struct_id, qual in zip(row[2], row[3], row[4], list_qual):
 				a = Author(auth_id=a_id, auth_name=auth, auth_quality=qual)
-				df = SearchAuthors.generate_DF(True, "id", struct_id)
+				df = AuthorsGraph.generate_DF(True, "id", struct_id)
 				s_type = df.iloc[0]['type_s']
 				s_acro = df.iloc[0]['acronym_s']
 				s_name = df.iloc[0]['name_s']
 				s_country = df.iloc[0]['country_s']
 
-				s = SearchAuthors.create_single_struct(s_type, struct_id, s_name, s_acro, s_country)
-				a.belongs_in.add(s)
+				s = AuthorsGraph.create_single_struct(s_type, struct_id, s_name, s_acro, s_country)
+				""" link author and struc_id structure """
+				a.belongs_to.add(s)
 				s.members.add(a)
 
-				""" author belongs in structure self.struct_id """
-				if struct_id == self.struct_id and auth not in authors:
-					authors.append(auth)
-				else:
-					""" author might belong in child structure of struct_id """
-					if (self.check_parents(struct_id, None) and auth not in authors):
-						authors.append(auth)
+	#			""" author belongs to structure self.struct_id """
+	#			if struct_id == self.struct_id and auth not in authors:
+	#				authors.append(auth)
+	#			else:
+	#				""" author might belong in child structure of struct_id """
+				self.link_parents(struct_id, None)
+	#			authors.append(auth)
 					
 				doc.written_by.add(a)
-				a.article.add(doc)
+				a.articles.add(doc)
 				graph.push(a)
-				print(authors)
-
+			
+#			print(authors)
 			graph.push(doc)
+#		return authors
 
-		return authors
-
-search = SearchAuthors("acronym", "RESEA")
-print(search.struct)
-print(search.struct_id)
-print(search.struct_type)
-print(search.authors)
+#authorsGraph = AuthorsGraph("id", 441569)
+#print(authorsGraph.struct)
+#print(authorsGraph.struct_id)
+#print(authorsGraph.struct_type)

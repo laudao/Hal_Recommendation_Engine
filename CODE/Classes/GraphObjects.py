@@ -37,9 +37,8 @@ class Author(GraphObject):
 		self.auth_name = auth_name
 		self.auth_quality = auth_quality
 	
-	article = RelatedFrom("Article", "WRITTEN_BY")
-	belongs_in = RelatedTo(ResearchTeam or Department or Laboratory or Institution)
-	is_paid_by = RelatedTo(Laboratory or Institution)
+	articles = RelatedFrom("Article", "WRITTEN_BY")
+	belongs_to = RelatedTo(ResearchTeam or Department or Laboratory or Institution)
 
 class Article(GraphObject):
 	__primarykey__ = "docid"
@@ -62,6 +61,7 @@ class Article(GraphObject):
 		self.language = language
 		
 	written_by = RelatedTo(Author)
+	related_topics = RelatedTo(Topic)
 
 class Structure(GraphObject):
 	__primarykey__ = "struct_id"
@@ -77,7 +77,7 @@ class Structure(GraphObject):
 		self.struct_name = struct_name
 		self.struct_country = struct_country
 
-	members = RelatedFrom("Author", "BELONGS_IN")
+	members = RelatedFrom("Author", "BELONGS_TO")
 	
 class ResearchTeam(Structure):
 	def __init__(self, rteam_id, rteam_acronym, rteam_name, rteam_country):
@@ -105,7 +105,6 @@ class Institution(Structure):
 	def __init__(self, inst_id, inst_acronym, inst_name, inst_country):
 		super().__init__(inst_id, inst_acronym, inst_name, inst_country)
 
-	pays = RelatedFrom("Author", "IS_PAID_BY")
 	children = RelatedFrom("ResearchTeam" or "Department" or "Laboratory" or "Institution", "IS_PART_OF")
 	is_part_of = RelatedTo(Institution)
 
@@ -121,6 +120,6 @@ class Topic(GraphObject):
 		self.sign_words = sign_words
 		self.words_prob = words_prob
 
-	related_topics = Related(Topic, "SIMILARITY")
-
+	similar_topics = Related(Topic, "SIMILARITY")
+	related_articles = RelatedFrom(Article, "RELATED_TOPICS")
 	

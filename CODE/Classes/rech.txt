@@ -3,5 +3,5 @@ from 2000
 to
 Language: en
 Author:
-number of result: 200
+number of result: 100
 

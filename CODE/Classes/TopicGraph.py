@@ -13,6 +13,7 @@ class TopicGraph:
 		self.nb_passes = nb_passes
 		self.nb_topics = nb_topics
 		self.nb_words = nb_words
+		self.ldamodel = None
 		self.topics_list = []
 
 	@property
@@ -32,6 +33,10 @@ class TopicGraph:
 		return self.__nb_words
 
 	@property
+	def ldamodel(self):
+		return self.__ldamodel
+
+	@property
 	def topics_list(self):
 		return self.__topics_list
 
@@ -39,12 +44,13 @@ class TopicGraph:
 	def page(self, x):
 		if type(x) == PageHAL:
 			self.__page = x
-			try:
-				self.ModelLDA = "ok"
-			except AttributeError:
-				pass
+#			try:
+#				self.ModelLDA = "ok"
+#			except AttributeError:
+#				pass
 		else:
 			print("type of ", x, " must be PageHAL")
+			self.__page = None
 	
 	@nb_passes.setter
 	def nb_passes(self, x):
@@ -52,6 +58,8 @@ class TopicGraph:
 			self.__nb_passes = x
 		else:
 			print("nb_passes must be a positive integer")
+			print("default value of nb_passes is 50")
+			self.__nb_passes = 50
 
 	@nb_topics.setter
 	def nb_topics(self, x):
@@ -59,6 +67,8 @@ class TopicGraph:
 			self.__nb_topics = x
 		else:
 			print("nb_topics must be a positive integer")
+			print("default value of nb_topics is 5")
+			self.__nb_topics = 5
 
 	@nb_words.setter
 	def nb_words(self, x):
@@ -66,12 +76,27 @@ class TopicGraph:
 			self.__nb_words = x
 		else:
 			print("nb_words must be a positive integer")
+			print("default value of nb_words is 5")
 	
+	@ldamodel.setter
+	def ldamodel(self, x):
+		if not(self.page is None):
+			model = ModelLDA(self.page, self.nb_topics, self.nb_passes, self.nb_words)
+			ldamodel, doc_term_matrix, dic = model.extract_lda_topics()
+			ldamodel.save('lda.model')
+			self.__ldamodel = ldamodel
+		else:
+			self.ldamodel = None
+
 	@topics_list.setter
 	def topics_list(self, x):
-		model = ModelLDA(self.page, self.nb_topics, self.nb_passes, self.nb_words)
-		ldamodel, doc_term_matrix, dic = model.extract_lda_topics()
-		self.__topics_list = ldamodel.show_topics(formatted=False)
+		if not(self.page is None):
+			self.__topics_list = self.ldamodel.show_topics(formatted=False)
+#			f = open('topics_list.txt', 'w')
+#			for tuple in topics_list:
+#				f.write(' '.join(str(s) for s in tuple) + '\n')
+		else:
+			self.__topics_list = []
 	
 	def create_link_TopicGraph(self):
 		authenticate("localhost:7474", "neo4j", "stage")
@@ -91,7 +116,7 @@ class TopicGraph:
 				weight.append(couple[1])
 			t = Topic(topic[0], words, weight)
 			graph.push(t)
-			print("Topic created")
+			print("Topic " + str(topic[0]) + " created")
 
 		""" for each topic, relate it to the other ones """
 		for i in range(self.nb_topics):
@@ -139,24 +164,27 @@ class TopicGraph:
 				union=0
 				""" Jaccard similarity """
 				for couple in all:
+					print(couple)
 					mini = min(couple[0][1], couple[1][1])
 					inter = inter + mini
 					maxi = max(couple[0][1], couple[1][1])
 					union = union + maxi
 				sim = inter/union
-
+				print("inter : " + str(inter))
+				print("union : " + str(union))
 			#	if sim > 0.6:
 			#		# delete t2
 			#		pass 
 			#	else:
 				""" add relationship between topics """
-				t1.related_topics.add(t2, kwproperties=sim)
-				t2.related_topics.add(t1, kwproperties=sim)
+				print("sim : " + str(sim))
+				t1.similar_topics.add(t2, kwproperties=sim)
+				t2.similar_topics.add(t1, kwproperties=sim)
 				graph.push(t1)
 				graph.push(t2)
 				j=j+1
 			
 page = PageHAL.create_page_file("rech.txt")
-tgr = TopicGraph(page, 100, 5, 5)
+tgr = TopicGraph(page, 100, 5, 10)
 tgr.create_link_TopicGraph()
 
