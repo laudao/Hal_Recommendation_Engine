@@ -1,0 +1,6 @@
+Structure: LIRMM
+from 2000
+to 2005
+Language: en
+Author:
+number of result: 100

@@ -10,6 +10,8 @@ import string
 from gensim import corpora, models
 import pyLDAvis.gensim
 import pprint
+import progressbar
+from time import sleep
 
 class ModelLDA:
 	def __init__(self, page, nb_topics, nb_passe, nb_word):
@@ -60,7 +62,6 @@ class ModelLDA:
 		if x == "*#*":
 			ext = self.page.extract()
 			if len(ext) == 0:
-				print("ici")
 				ext = self.page.extract_title()
 				if len(ext) == 0:
 					print("The corpus is empty you must modify the page")
@@ -133,19 +134,23 @@ class ModelLDA:
 		return res
 	
 	def normalize_corpus(self):
+		bar = progressbar.ProgressBar(maxval=20, \
+		    widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+
 		punctuation = set(string.punctuation)  # ponctuation
 		lemma = WordNetLemmatizer()
 		if self.language == 'en':
-			res = [ModelLDA.clean_text_en(t, punctuation, lemma) for (d, t) in self.corpus]
+			res = [ModelLDA.clean_text_en(t, punctuation, lemma) for (d, t) in bar(self.corpus)]
 		else:
-			res = [ModelLDA.clean_text_fr(t, punctuation, lemma) for (d, t) in self.corpus]
-#		print("res" + str(type(res)))
+			res = [ModelLDA.clean_text_fr(t, punctuation, lemma) for (d, t) in bar(self.corpus)]
 		return res
 		
 	def extract_lda_topics(self):
+		bar = progressbar.ProgressBar(maxval=20, \
+		    widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
 		all_doc = self.normalize_corpus()
 		dictionary = corpora.Dictionary(all_doc)  # Creating dictionary (object) of corpus : term (unique) indexed
-		matrix = [dictionary.doc2bow(doc) for doc in all_doc]  # matrix[j]=(i,o) o=occurrence word i(index dic) in doc j
+		matrix = [dictionary.doc2bow(doc) for doc in bar(all_doc)]  # matrix[j]=(i,o) o=occurrence word i(index dic) in doc j
 		lda = models.ldamodel.LdaModel  # Creating object for LDA model
 		ldamodel = lda(matrix, num_topics=self.nb_topics, id2word=dictionary, passes=self.nb_passe)
 		return ldamodel, matrix, dictionary

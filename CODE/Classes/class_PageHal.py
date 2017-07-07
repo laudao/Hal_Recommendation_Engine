@@ -8,6 +8,8 @@ import requests
 import json
 from datetime import datetime
 import enchant
+import progressbar
+from time import sleep
 
 class PageHAL:
 	def __init__(self, struct=None,start_year=None, end_year=None, language='en', author=None, size=None):
@@ -164,7 +166,7 @@ class PageHAL:
 		Return title, keys words and abstract in language"""
 		url = 'https://api.archives-ouvertes.fr/search/?fl=title_s,' + language + '_keyword_s,abstract_s'
 		if type(struct) == str:
-			url += '&fq=structAcronym_s:' + struct # restrict struct name
+			url += '&fq=structAcronym_s:"' + struct + '"'# restrict struct name
 		elif type(struct) == int:
 			url += '&fq=structId_i:' + str(struct)  # restrict id struct
 		if not(pstart is None):  # restrict period
@@ -176,7 +178,6 @@ class PageHAL:
 		url += '&fq=language_s:' + language
 		if not(size is None):
 			url += '&rows=' + str(size)  # nb result
-		print(url)
 		return url
 		
 	def collect(self):
@@ -215,6 +216,11 @@ class PageHAL:
 		dicjson = r.json()
 		res = []
 		doc = 0
+		bar = progressbar.ProgressBar(maxval=20, \
+				widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+		bar.start()
+		counter=0
+
 		for dic in dicjson['response']['docs']:
 			title = dic['title_s'][0]
 			if PageHAL.string_is_valid(self.language, title):
@@ -237,7 +243,7 @@ class PageHAL:
 						if PageHAL.string_is_valid(self.language, dic['abstract_s'][0]):
 							abstract = dic['abstract_s'][0]
 						else:
-							print(title + " not added because abstract is invalid")
+							""" doc not added because abstract is invalid"""
 							continue
 					if abstract != "" and not(abstract in ['no abstract', 'absent']):
 						text += abstract
@@ -245,7 +251,10 @@ class PageHAL:
 					res.append((doc, title + text))
 					doc += 1
 			else:
-				print(title + " not added because title is invalid")
+				""" doc not added because title is invalid """
+			bar.update(counter+1)
+
+		bar.finish()
 		return res
 	
 	def extract_title(self):

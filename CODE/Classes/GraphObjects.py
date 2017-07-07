@@ -26,19 +26,17 @@ class Topic(GraphObject):
 	pass
 
 class Author(GraphObject):
-	__primarykey__ = "auth_id"
+	__primarykey__ = "auth_name"
 
-	auth_id = Property('auth_id')
 	auth_name = Property('auth_name')
-	auth_quality = Property('auth_quality')
-
-	def __init__(self, auth_id, auth_name, auth_quality):
-		self.auth_id = auth_id
+	
+	def __init__(self, auth_name):
 		self.auth_name = auth_name
-		self.auth_quality = auth_quality
 	
 	articles = RelatedFrom("Article", "WRITTEN_BY")
 	belongs_to = RelatedTo(ResearchTeam or Department or Laboratory or Institution)
+	recommended_docs = RelatedTo(Article)
+	recommended_authors = Related(Author, "RELATED_AUTHORS")
 
 class Article(GraphObject):
 	__primarykey__ = "docid"
@@ -62,6 +60,7 @@ class Article(GraphObject):
 		
 	written_by = RelatedTo(Author)
 	related_topics = RelatedTo(Topic)
+	recommended_for = RelatedFrom("Author", "RECOMMENDED_DOCS")
 
 class Structure(GraphObject):
 	__primarykey__ = "struct_id"
