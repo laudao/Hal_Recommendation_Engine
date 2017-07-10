@@ -1,0 +1,16 @@
+nb_topics: 5
+nb_words: 10
+rech.txt
+rech2.txt
+rech3.txt
+rech4.txt
+rech5.txt
+rech6.txt
+rech7.txt
+rech8.txt
+rech9.txt
+rech10.txt
+rech11.txt
+rech12.txt
+rech13.txt
+rech14.txt

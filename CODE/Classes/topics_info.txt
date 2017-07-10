@@ -1,8 +1,0 @@
-nb_topics: 5
-nb_words: 10
-rech.txt
-rech2.txt
-rech3.txt
-rech4.txt
-rech5.txt
-rech6.txt
