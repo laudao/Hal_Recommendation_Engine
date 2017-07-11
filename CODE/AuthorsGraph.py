@@ -252,7 +252,6 @@ class AuthorsGraph:
 				else:	
 					a = Author(auth)
 					print(a.auth_name + " added to the database")
-									
 					graph.push(a)
 
 				struct_id = int(struct_id)
@@ -263,12 +262,15 @@ class AuthorsGraph:
 				s_country = df.iloc[0]['country_s']
 					
 				s, existed = AuthorsGraph.create_single_struct(graph, s_type, struct_id, s_name, s_acro, s_country)
+				graph.push(s)
 				link_exists = ((graph.run('MATCH (a:Author)-[r:BELONGS_TO]->(s) WHERE a.auth_name = "' + a.auth_name + '" AND s.struct_id = ' + str(struct_id) + ' RETURN COUNT(r)')).data())[0]['COUNT(r)']
-
+				
 				""" author was not linked to struct """
 				if link_exists == 0:
+					print("Added link between " + a.auth_name + " and " + s_name)
 					a.belongs_to.add(s)
 					s.members.add(a)
+					graph.push(a)
 				else:
 					print(auth + " already linked to " + s_name)
 
@@ -280,7 +282,7 @@ class AuthorsGraph:
 					
 				""" link author and article """
 				graph.run('MATCH (a:Author), (d:Article) WHERE a.auth_name = "' + a.auth_name + '" AND d.docid = ' + str(docid) + ' CREATE (a)<-[w:WRITTEN_BY {quality: "' + qual + '"}]-(d)') 
-
+				
 			#graph.push(doc)
 
 #authorsGraph = AuthorsGraph("id", 408080)

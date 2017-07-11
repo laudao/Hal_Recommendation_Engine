@@ -75,7 +75,7 @@ def get_graph():
 				target = i
 				i+=1
 			rels.append({"source": source, "target": target, "caption": "WRITTEN_BY"})
-	print(rels)
+	print(nodes)
 	return {"nodes": nodes, "links": rels}
 
 @get("/search")
@@ -105,6 +105,36 @@ def get_article(title):
 	return {"title": row['title'],
 					"authors": [dict(zip(("name", "quality"), auth)) for auth in row['authors']]}
 
+@get("/article_graph/<title>")
+def get_article_graph(title):
+	results = graph.run(
+		"MATCH (article:Article {title:{title}}) "
+		"OPTIONAL MATCH (a:Author)<-[r]-(article) "
+		"RETURN article.title as title,"
+		"collect([a.auth_name,  r.quality]) as authors "
+		"LIMIT 1", {"title": title})
+	
+	nodes = []
+	rels = []
+	i=0
+	for title, authors in results:
+		nodes.append({"title": title, "label": "article"})
+		source = i
+		i+=1
+		for name in authors:
+			author = {"title": name, "label": "author"}
+			try:
+				target = nodes.index(author)
+			except ValueError:
+				nodes.append(author)
+				target = i
+				i+=1
+			rels.append({"source": source, "target": target, "caption": "WRITTEN_BY"})
+	print("START")
+	print(nodes)
+	print(rels)
+	print("END")
+	return {"nodes": nodes, "links": rels}
 
 if __name__ == "__main__":
     run(port=8080)

@@ -85,6 +85,9 @@ class RecommendationGraph:
 		if not(a is None):
 			r = graph.run('MATCH (a:Author)<-[:WRITTEN_BY]-()-[r1:RELATED_TOPICS]->()<-[r2:RELATED_TOPICS]-(doc:Article) WHERE a.auth_name = "' + self.auth_name +'" AND NOT (doc)-[:WRITTEN_BY]->(a) RETURN doc.docid, doc.title, r1.weight, r2.weight')
 			df = pd.DataFrame(r.data())
+			if df.empty:
+				print("Can't get related articles for " + a.auth_name)
+				return 
 			df = df.set_index(df["doc.docid"])
 			df = df.drop("doc.docid", axis=1)
 			df["weight"] = df["r1.weight"] * df["r2.weight"]

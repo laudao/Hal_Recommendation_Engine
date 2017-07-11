@@ -180,9 +180,8 @@ class AuthorsTopicsGraph:
 							
 							""" search for right topic """
 							while t is None:
-								new_id = merging_info[max_topic]
-								t = Topic.select(graph, new_id).first()
-								max_topic = new_id
+								max_topic = merging_info[max_topic]
+								t = Topic.select(graph, max_topic).first()
 							
 							print("Right topic is " + str(max_topic))
 						else:
@@ -226,7 +225,8 @@ class AuthorsTopicsGraph:
 
 				if (language == self.topic_language):
 					if doc.abstract == []:
-						abstract = ""
+						print("Can't link doc " + str(docid) + " to any topics because it doesn't have an abstract")
+						continue
 					else:
 						abstract = doc.abstract
 					if doc.keywords == []:
