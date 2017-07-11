@@ -9,25 +9,26 @@
 <div role="navigation" class="navbar navbar-default navbar-static-top">
 	<div class="container">
 		<div class="row">
+			<div class="col-sm-3 col-md-3" style="height:100%;">
+				<button type="button" class="btn btn-default" style="height:90%;margin-top:1.5%">Display topics</button>
+			</div>
+
 			<div class="col-sm-6 col-md-6">
 				<ul class="nav navbar-nav">
 					<li>
 						<form role="search" class="navbar-form" id="search">
-							<div class="form-group">
-								<input type="text" value="" placeholder="Search for Article Title" class="form-control" name="search">
+							<div class="form-group" id="searchBarDiv">
+								<input type="text" value="" placeholder="Search for Article, Author or Structure" class="form-control" name="search">
 							</div>
-							<button class="btn btn-default" type="submit">Search</button>
+							<button class="btn btn-default searchBtn" type="submit" id="searchArticle">Article</button>
+							<button class="btn btn-default searchBtn" type="submit" id="searchAuthor">Author</button>
+							<button class="btn btn-default searchBtn" type="submit" id="searchStructure">Structure</button>
 						</form>
 					</li>
 				</ul>
 			</div>
-			<div class="navbar-header col-sm-6 col-md-6">
-				<div class="logo-well">
-						<img src="https://www.ccsd.cnrs.fr/wp-content/uploads/2016/02/hal_full.jpg" alt="HAL Documents" height="100px" width="100px" id="logo" >
-				</div>
-				<div class="navbar-brand">
-					<div class="brand">HAL Documents</div>
-				</div>
+
+			<div class="navbar-header col-sm-3 col-md-3">
 			</div>
 		</div>
 	</div>
@@ -39,9 +40,6 @@
 			<div class="panel-heading">Search Results</div>
 			<table id="results" class="table table-striped table-hover">
 				<thead>
-				<tr>
-					<th>Article</th>
-				</tr>
 				</thead>
 				<tbody>
 				</tbody>
@@ -52,10 +50,11 @@
 		<div class="panel panel-default">
 			<div class="panel-heading" id="title">Details</div>
 			<div class="row">
-				<div class="col-sm-4 col-md-4">
-					<img src="" class="well" id="poster"/>
+				<div class="col-sm-7 col-md-7">
+					<h4>General informations</h4>
+					<ul id="informations">
 				</div>
-				<div class="col-md-8 col-sm-8">
+				<div class="col-md-5 col-sm-5">
 					<h4>Authors</h4>
 					<ul id="authors">
 					</ul>
@@ -83,6 +82,16 @@
 	.node.department { fill : #8CEDC7 }
 	.node.researchteam { fill : #D0ED8C }
 	.link { stroke: #999; stroke-opacity: .6; stroke-width: 1px; }
+	#searchBarDiv {
+		width: 100%;
+	}
+	.searchBtn {
+		width: 32.7%;
+		margin-top: 0.2em;
+	}
+	.navbar {
+		height: 11%;
+	}
 </style>
 </style>
 
@@ -91,8 +100,8 @@
 <script type="text/javascript">
 
 	$(function() {
-			var nodeRadius = 30,
-				linkDistance = 120;
+			var nodeRadius = 50,
+				linkDistance = 300;
 
 			var graph = d3.select("#graph");
 
@@ -115,19 +124,18 @@
 
 			svg = svg.append("g");
 
-		function display_subgraph(title) {
+		function display_subgraph(search) {
 			var width = $("#graph-container").width(),
 				height = 400;
 
 			svg.selectAll("g > *").remove();
 
 			var force = d3.layout.force()
-				.charge(-100).linkDistance(linkDistance).size([width, height]);
+				.charge(-500).linkDistance(linkDistance).size([width, height]);
 
 
-			d3.json("/article_graph/" + title, function(error, graph) {
+			d3.json(search, function(error, graph) {
 				if (error) {
-					console.log("error", error);
 					return;
 				}
 				force.nodes(graph.nodes).links(graph.links).start();
@@ -160,10 +168,29 @@
 				    .style("font-size", "10px")
 				    .attr("dx", ".35em")
 				    .html(function(d) {
-				    	var name = d.title[0].split(" ");
+				    	var name = d.title.split(" ");
 				    	return '<tspan x=0 dy="-3">' + name.join('</tspan><tspan x=0 dy="15">') + '</tspan>';
 				    });
-				
+//				  .click(function(d) {
+//						showRecommendedAuthors(d.title);
+//				  }
+//				
+				node.filter(function (d) { 
+						return (d.label == "institution" || d.label == "laboratory" || d.label == "department" || d.label == "researchteam");
+					})
+					.append("text")
+				    .attr("x", "50%")
+				    .attr("text-anchor", "middle")
+				    .style("font-size", "10px")
+				    .attr("dx", ".35em")
+				    .html(function(d) {
+				    	if (d.acronym == 0.0){
+				    		var name = d.title.split(" ");
+				    	}else{
+				    		var name = d.acronym.split(" ");
+				    	}
+				    	return '<tspan x=0 dy="-30">' + name.join('</tspan><tspan x=0 dy="15">') + '</tspan>';
+				    });
 
 				link.append("title")
 					.text(function(d) {
@@ -192,17 +219,34 @@
   	    			});
 				});
 
-				//			        d3.selectAll("svg > *").remove();
 			});
 		}
 
+//		function showRecommendedAuthors(name){
+//			$.get("/recommended_authors/" + encodeURIComponent(name);
+//				function(data) {
+//					if (!data)
+//						return;
+//
+//				}, "json");
+//			return false;
+//		}
+		
 		function showArticle(title) {
 			$.get("/article/" + encodeURIComponent(title),
 				function(data) {
 					if (!data)
 						return;
-					display_subgraph(data.title);
+					display_subgraph("/article_graph/" + data.title);
 					$("#title").text(data.title);
+					var $info = $("#informations").empty();
+					$info.append($("<li>" + "docid: " + data.docid + "</li>"));
+					$info.append($("<li>" + "abstract " + data.abstract + "</li>"));
+					$info.append($("<li>" + "keywords: " + data.keywords + "</li>"));
+					$info.append($("<li>" + "type: " + data.type + "</li>"));
+					$info.append($("<li>" + "publication date: " + data.pub_date + "</li>"));
+					$info.append($("<li>" + "language: " + data.language + "</li>"));
+
 					var $list = $("#authors").empty();
 					data.authors.forEach(function(authors) {
 						$list.append($("<li>" + authors.name + " / " + authors.quality + "</li>"));
@@ -230,7 +274,7 @@
 			return false;
 		}
 		$("#search").submit(search);
-		//    search();
+		search();
 	})
 	
 	

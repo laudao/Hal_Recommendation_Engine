@@ -57,11 +57,11 @@ def get_graph():
 	
 	results = graph.run(
 	    "MATCH (a:Author)<-[:WRITTEN_BY]-(d:Article)"
-	    "RETURN d.title as title, collect(a.auth_name) as authors"
+	    "RETURN d.title as title, d.docid as docid, d.abstract as abstract, d.keywords as keywords, d.article_type as article_type, d.pub_date as pub_date, d.language as language, collect(a.auth_name) as authors"
 	    )
 	i = 0
-	for title, authors in results:
-		nodes.append({"title": title, "label": "article"})
+	for title, docid, abstract, keywords, article_type, pub_date, language, authors in results: 
+		nodes.append({"title": title, "docid": docid, "abstract": abstract, "keywords": keywords, "article_type": article_type, "pub_date": pub_date, "language": language,"label": "article"})
 		source = i
 		i += 1
 		
@@ -88,7 +88,8 @@ def get_search():
 		results = graph.run(
 	  	"MATCH (article:Article) "
 	  	"WHERE article.title =~ {title} "
-	  	"RETURN article", {"title": "(?i).*" + q + ".*"})
+	  	"RETURN article "
+	  	"LIMIT 20", {"title": "(?i).*" + q + ".*"})
 		response.content_type = "application/json"
 		return json.dumps([{"article": dict(row["article"])} for row in results])
 
@@ -98,20 +99,32 @@ def get_article(title):
 	results = graph.run(
 		"MATCH (article:Article {title:{title}}) "
 		"OPTIONAL MATCH (a:Author)<-[r]-(article) "
-		"RETURN article.title as title,"
+		"RETURN article.title as title, "
+		"article.docid as docid, " 
+		"article.abstract as abstract, "
+		"article.keywords as keywords, " 
+		"article.article_type as article_type, " 
+		"article.pub_date as pub_date, " 
+		"article.language as language, "
 		"collect([a.auth_name,  r.quality]) as authors "
 		"LIMIT 1", {"title": title})
-	row = results.next()
-	return {"title": row['title'],
+	row = results.next() 
+	return {"title": row['title'], 
+					"docid": row['docid'],
+					"abstract": row['abstract'],
+					"keywords": row['keywords'],
+					"type": row['article_type'],
+					"pub_date": row['pub_date'],
+					"language": row['language'],
 					"authors": [dict(zip(("name", "quality"), auth)) for auth in row['authors']]}
 
 @get("/article_graph/<title>")
 def get_article_graph(title):
 	results = graph.run(
 		"MATCH (article:Article {title:{title}}) "
-		"OPTIONAL MATCH (a:Author)<-[r]-(article) "
+		"OPTIONAL MATCH (s)<-[:BELONGS_TO]-(a:Author)<-[r]-(article) "
 		"RETURN article.title as title,"
-		"collect([a.auth_name,  r.quality]) as authors "
+		"collect([a.auth_name,  r.quality, s.struct_acronym, s.struct_name, labels(s)[0]]) as authors "
 		"LIMIT 1", {"title": title})
 	
 	nodes = []
@@ -121,20 +134,41 @@ def get_article_graph(title):
 		nodes.append({"title": title, "label": "article"})
 		source = i
 		i+=1
-		for name in authors:
-			author = {"title": name, "label": "author"}
+		for name, quality, acronym, s_name, label in authors:
+			author = {"title": name, "quality": quality, "label": "author"}
 			try:
 				target = nodes.index(author)
 			except ValueError:
 				nodes.append(author)
 				target = i
 				i+=1
+			struct = {"title": s_name, "acronym": acronym, "label": label.lower()}
+			try:
+				target_struct = nodes.index(struct)
+			except ValueError:
+				nodes.append(struct)
+				target_struct = i
+				i+=1
+
 			rels.append({"source": source, "target": target, "caption": "WRITTEN_BY"})
+			rels.append({"source": target, "target": target_struct, "caption": "BELONGS_TO"})
 	print("START")
 	print(nodes)
 	print(rels)
 	print("END")
 	return {"nodes": nodes, "links": rels}
+
+@get("/recommended_authors/<name>")
+def get_recommended_authors(name):
+	results = graph.run(
+		"MATCH (a1:Author {auth_name: {name}})"
+		"OPTIONAL MATCH (a2:Author)<-[r:RECOMMENDED_AUTHORS]-(a1) "
+		"WHERE a2.auth_name != a1.auth_name "
+		"RETURN collect([a2.auth_name, r.weight]) as recommended_authors "
+		"LIMIT 1", {"name": name})
+	row = results.next()
+	return {"recommended_authors": [dict(zip(("name", "weight"), auth)) for auth in row['recommended_authors']]} 
+	
 
 if __name__ == "__main__":
     run(port=8080)
