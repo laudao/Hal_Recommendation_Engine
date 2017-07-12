@@ -262,9 +262,14 @@ class AuthorsGraph:
 				s_country = df.iloc[0]['country_s']
 					
 				s, existed = AuthorsGraph.create_single_struct(graph, s_type, struct_id, s_name, s_acro, s_country)
-				graph.push(s)
-				link_exists = ((graph.run('MATCH (a:Author)-[r:BELONGS_TO]->(s) WHERE a.auth_name = "' + a.auth_name + '" AND s.struct_id = ' + str(struct_id) + ' RETURN COUNT(r)')).data())[0]['COUNT(r)']
 				
+				link_exists = ((graph.run('MATCH (a:Author)-[r:BELONGS_TO]->(s) WHERE a.auth_name = "' + a.auth_name + '" AND s.struct_id = ' + str(struct_id) + ' RETURN COUNT(r)')).data())[0]['COUNT(r)']
+				""" structure has just been created """
+				if existed == 0:
+					self.link_parents(graph, struct_id, None)
+				else:
+					print(s_name + " already in the database")
+					
 				""" author was not linked to struct """
 				if link_exists == 0:
 					print("Added link between " + a.auth_name + " and " + s_name)
@@ -273,17 +278,11 @@ class AuthorsGraph:
 					graph.push(a)
 				else:
 					print(auth + " already linked to " + s_name)
-
-				""" structure has just been created """
-				if existed == 0:
-					self.link_parents(graph, struct_id, None)
-				else:
-					print(s_name + " already in the database")
-					
+				
 				""" link author and article """
 				graph.run('MATCH (a:Author), (d:Article) WHERE a.auth_name = "' + a.auth_name + '" AND d.docid = ' + str(docid) + ' CREATE (a)<-[w:WRITTEN_BY {quality: "' + qual + '"}]-(d)') 
 				
-			#graph.push(doc)
+			graph.push(doc)
 
 #authorsGraph = AuthorsGraph("id", 408080)
 #authorsGraph.create_graph()

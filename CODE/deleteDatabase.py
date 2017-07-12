@@ -9,10 +9,8 @@ import os, re
 authenticate("localhost:7474", "neo4j", "stage")
 graph = Graph("http://localhost:7474/db/data/")
 
-#graph.run("MATCH ()-[r:RELATED_TOPICS]->() DELETE r")
-#graph.run("MATCH ()-[r:RECOMMENDED_DOCS]->() DELETE r")
-#graph.run("MATCH (n:Topic) OPTIONAL MATCH (n)-[r]-() DELETE r,n")
-#graph.run("MATCH (n:Tata) OPTIONAL MATCH (n)-[r]-() DELETE r,n")
+graph.run("MATCH ()-[r:RELATED_TOPICS]->() DELETE r")
+graph.run("MATCH ()-[r:RECOMMENDED_DOCS]->() DELETE r")
 graph.run("MATCH (n:Article) OPTIONAL MATCH (n)-[r]-() DELETE r,n")
 graph.run("MATCH (n:Author) OPTIONAL MATCH (n)-[r]-() DELETE r,n")
 #graph.run("MATCH (n:Institution) OPTIONAL MATCH (n)-[r]-() DELETE r,n")

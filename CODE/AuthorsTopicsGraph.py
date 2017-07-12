@@ -234,7 +234,10 @@ class AuthorsTopicsGraph:
 					else:
 						keywords = ' '.join(doc.keywords)
 					text = self.get_valid_text(title, abstract, keywords)
-
+			#		print(abstract)
+			#		print(keywords)
+			#		print(title)
+			#		print(text)
 					if text != "":
 						topic_id, weight = self.getMostRelevantTopic(graph, text)
 					
