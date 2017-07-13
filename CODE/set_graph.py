@@ -245,20 +245,29 @@ def get_structure(name):
 		'RETURN collect([p.struct_name, p.struct_acronym, labels(p)[0]]) as parents '
 		'LIMIT 1', {"name": name}
 		)
+	results_topics = graph.run(
+		'MATCH (s {struct_name: {name}}) '
+		'OPTIONAL MATCH (s)<-[:BELONGS_TO]-()<-[:WRITTEN_BY]-()-[:RELATED_TOPICS]->(t) '
+		'RETURN collect(distinct [t.sign_words]) as topics '
+		'LIMIT 1', {"name": name}
+		)
 
 	print(results_children.data())
 	print(results_parents.data())
 	row_children = results_children.current() 
 	row_parents = results_parents.current()
+	row_topics = results_topics.next()
 	print(row_children)
 	print(row_parents)
+	print(row_topics)
 	return {"name": row_children['name'], 
 					"id": row_children['id'],
 					"acronym": row_children['acronym'],
 					"country": row_children['country'],
 					"type": row_children['type'],
 					"children": [dict(zip(("name", "acronym", "type"), child)) for child in row_children['children']],
-					"parents": [dict(zip(("name", "acronym", "type"), parent)) for parent in row_parents['parents']]}
+					"parents": [dict(zip(("name", "acronym", "type"), parent)) for parent in row_parents['parents']],
+					"topics": [dict(zip(("words",), topic)) for topic in row_topics['topics']]}
 
 @get("/structure_graph/<name>")
 def get_structure_graph(name):
@@ -290,7 +299,7 @@ def get_structure_graph(name):
 
 	results_parents = graph.run(
 		"MATCH (s {struct_name: {name}}) "
-		"OPTIONAL MATCH (s)-[:IS_PART_OF]->(p) "
+		"OPTIONAL MATCH (s)-[r:IS_PART_OF]->(p) "
 		"RETURN s.struct_name as name, s.struct_acronym as acronym, labels(s)[0] as type, "
 		"collect([p.struct_name, labels(p)[0]]) as parents "
 		"LIMIT 1", {"name": name})
@@ -298,18 +307,16 @@ def get_structure_graph(name):
 	for name, acronym, type, parents in results_parents:
 		s = {"name": name, "acronym": acronym, "label": type}
 		source = nodes.index(s)
-		i += 1
+		
 		for parent_name, parent_type in parents:
 			if parent_name is None:
 				continue
 			print("parent : " + parent_name)
 			p = {"name": parent_name, "label": parent_type.lower()}
-			try:
-				target = nodes.index(p)
-			except ValueError:
-				nodes.append(p)
-				target = i
-				i += 1
+
+			nodes.append(p)
+			target = i
+			i += 1
 			rels.append({"source": source, "target": target, "caption": "IS_PART_OF"})
 
 	print(nodes)
