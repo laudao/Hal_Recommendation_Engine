@@ -158,7 +158,7 @@ def get_author(name):
 	print(row_docs)
 
 	results_docs_recommendations = graph.run(
-		"MATCH (author: Author {auth_name:{name}}) "
+		"MATCH (a: Author {auth_name:{name}}) "
 		"OPTIONAL MATCH (d)<-[r:RECOMMENDED_DOCS]-(a) "
 		"RETURN collect([d.title, r.weight]) as recommended_docs "
 		"LIMIT 1", {"name": name}
@@ -171,7 +171,7 @@ def get_author(name):
 		) 
 	row_reco_docs = results_docs_recommendations.next()
 	row_reco_authors = results_authors_recommendations.next()
-
+	print(row_reco_docs['recommended_docs'])
 	return {"name": row_struct['name'], 
 					"articles": [dict(zip(("title",), article)) for article in row_docs['articles']],
 					"topics": [dict(zip(("id", "words"), topic)) for topic in row_topics['topics']],
@@ -199,7 +199,7 @@ def get_recommended_docs(name):
 	row = results.next()
 	return {"recommended_docs": [dict(zip(("title", "weight"), doc)) for doc in row['recommended_docs']]}
 
-@get("/topics")
+@get("/topics_graph")
 def get_topics():
 	nodes = []
 	rels = []
@@ -208,7 +208,7 @@ def get_topics():
 		"RETURN t.topic_id as topic_id, t.sign_words as words, t.words_prob as weights"
 		)
 	for topic_id, words, weights in results:
-		nodes.append({"id": topic_id, "words": words, "weights": weights})
+		nodes.append({"id": topic_id, "words": words, "weights": weights, "label": "topic"})
 
 	results = graph.run(
 		"MATCH (t1)-[r:SIMILARITY]-(t2) "
@@ -217,8 +217,8 @@ def get_topics():
 		)
 	i=0
 	for t1_id, words1, weights1, t2_id, words2, weights2, sim in results:
-		topic1 = {"id": t1_id, "words": words1, "weights": weights1}
-		topic2 = {"id": t2_id, "words": words2, "weights": weights2}
+		topic1 = {"id": t1_id, "words": words1, "weights": weights1, "label": "topic"}
+		topic2 = {"id": t2_id, "words": words2, "weights": weights2, "label": "topic"}
 		source = nodes.index(topic1)
 		target = nodes.index(topic2)
 
@@ -227,47 +227,94 @@ def get_topics():
 
 @get("/structure/<name>")
 def get_structure(name):
-	results = graph.run(
-		"MATCH (s {struct_name: {name}}) "
-		"OPTIONAL MATCH (s1)-[r1:IS_PART_OF]->(s)-[:IS_PART_OF]->(s2) "
-		"RETURN s.struct_id as s_id, s.struct_name as name, s.struct_acronym as acronym, s.struct_country as country "
-		"collect([s1.struct_name, labels(s1)[0], s2.struct_name, labels(s2)[0]]) as structures"
-		"LIMIT 1", {"name": nam})
+	print(name)
+	results_children = graph.run(
+		'MATCH (s {struct_name:{name}}) '
+		'OPTIONAL MATCH (c)-[:IS_PART_OF]->(s) '
+		'RETURN s.struct_name as name, '
+		's.struct_id as id, '
+		's.struct_acronym as acronym, '
+		's.struct_country as country, '
+		'labels(s) as type, '
+		'collect([c.struct_name, c.struct_acronym, labels(c)[0]]) as children '
+		'LIMIT 1', {"name": name}
+		)
+	results_parents = graph.run(
+		'MATCH (s {struct_name:{name}}) '
+		'OPTIONAL MATCH (s)-[:IS_PART_OF]->(p) '
+		'RETURN collect([p.struct_name, p.struct_acronym, labels(p)[0]]) as parents '
+		'LIMIT 1', {"name": name}
+		)
+
+	print(results_children.data())
+	print(results_parents.data())
+	row_children = results_children.current() 
+	row_parents = results_parents.current()
+	print(row_children)
+	print(row_parents)
+	return {"name": row_children['name'], 
+					"id": row_children['id'],
+					"acronym": row_children['acronym'],
+					"country": row_children['country'],
+					"type": row_children['type'],
+					"children": [dict(zip(("name", "acronym", "type"), child)) for child in row_children['children']],
+					"parents": [dict(zip(("name", "acronym", "type"), parent)) for parent in row_parents['parents']]}
+
+@get("/structure_graph/<name>")
+def get_structure_graph(name):
 	nodes = []
 	rels = []
 	i=0
 
-	for s_id, name, acronym, country, structures in results:
-		s = {"id": s_id, "name": name, "acronym": acronym, "country": country}
-		try:
-			target1 = nodes.index(s)
-			source2 = nodes.index(s)
-		except ValueError:
-			nodes.append(s)
-			target1 = i
-			source2 = i
+	results_children = graph.run(
+		"MATCH (s {struct_name: {name}}) "
+		"OPTIONAL MATCH (c)-[r:IS_PART_OF]->(s) "
+		"RETURN s.struct_name as name, s.struct_acronym as acronym, labels(s)[0] as type, "
+		"collect([c.struct_name, labels(c)[0]]) as children "
+		"LIMIT 1", {"name": name}
+		)
+	for name, acronym, type, children in results_children:
+		s = {"name": name, "acronym": acronym, "label": type}
+		nodes.append(s)
+		target = i
+		i += 1
+		for child_name, child_type in children:
+			if child_name is None:
+				continue
+			print("child :" + child_name)
+			c = {"name": child_name, "label": child_type.lower()}
+			nodes.append(c)
+			source = i
 			i += 1
-		
-		for name1, s1_type, name2, s2_type in structures:
-			s1 = {"name": name1, "label": lower(s1_type)}
-			s2 = {"name": name2, "label": lower(s2_type)}
+			rels.append({"source": source, "target": target, "caption": "IS_PART_OF"})
 
-			try:
-				source1 = nodes.index(s1)
-			except ValueError:
-				nodes.append(s1)
-				source1 = i
-				i += 1
-			rels.append({"source": source1, "target": target1})
-			try:
-				target2 = nodes.index(s2)
-			except ValueError:
-				nodes.append(s2)
-				target2 = i
-				i += 1
-			rels.append({"source": source2, "target": target2})
+	results_parents = graph.run(
+		"MATCH (s {struct_name: {name}}) "
+		"OPTIONAL MATCH (s)-[:IS_PART_OF]->(p) "
+		"RETURN s.struct_name as name, s.struct_acronym as acronym, labels(s)[0] as type, "
+		"collect([p.struct_name, labels(p)[0]]) as parents "
+		"LIMIT 1", {"name": name})
 
-	return {"nodes": nodes, "links": links}
+	for name, acronym, type, parents in results_parents:
+		s = {"name": name, "acronym": acronym, "label": type}
+		source = nodes.index(s)
+		i += 1
+		for parent_name, parent_type in parents:
+			if parent_name is None:
+				continue
+			print("parent : " + parent_name)
+			p = {"name": parent_name, "label": parent_type.lower()}
+			try:
+				target = nodes.index(p)
+			except ValueError:
+				nodes.append(p)
+				target = i
+				i += 1
+			rels.append({"source": source, "target": target, "caption": "IS_PART_OF"})
+
+	print(nodes)
+	print(rels)
+	return {"nodes": nodes, "links": rels}
 
 if __name__ == "__main__":
     run(port=8080)
