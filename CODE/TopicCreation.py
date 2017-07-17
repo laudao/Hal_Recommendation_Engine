@@ -33,9 +33,17 @@ class TopicCreation:
 			print("Added " + ' '.join(files) + " in topics_info.txt")
 
 		""" indicate that topics have been added to the graph """
-		f = open('topics/added_topics.txt', 'w')
-		f.write('1')
-		f.close()
+		f_authors = open('topics/added_topicsAuthorsGraph.txt', 'w')
+		f_authors.write('1')
+		f_authors.close()
+		
+		f_reco_authors = open('topics/added_topicsRecoAuthors.txt', 'w')
+		f_reco_authors.write('1')
+		f_reco_authors.close()
+
+		f_reco_docs = open('topics/added_topicsRecoDocs.txt', 'w')
+		f_reco_docs.write('1')
+		f_reco_docs.close()
 
 	@property
 	def files(self):

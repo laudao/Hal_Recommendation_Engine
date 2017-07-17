@@ -15,3 +15,9 @@ rech12.txt
 rech13.txt
 rech14.txt
 rech15.txt
+rech16.txt
+rech17.txt
+rech18.txt
+rech19.txt
+rech20.txt
+rech21.txt

@@ -195,6 +195,9 @@ class AuthorsGraph:
 		parent_id = df.iloc[0]['parentDocid_i'] 
 		s, existed = AuthorsGraph.create_single_struct(graph, s_type, struct_id, s_name, s_acronym, s_country)
 
+		if existed == 0:
+			graph.push(s)
+
 		if child != None:
 			s.children.add(child)
 			child.is_part_of.add(s)
@@ -269,7 +272,8 @@ class AuthorsGraph:
 					self.link_parents(graph, struct_id, None)
 				else:
 					print(s_name + " already in the database")
-					
+				graph.push(a)	
+
 				""" author was not linked to struct """
 				if link_exists == 0:
 					print("Added link between " + a.auth_name + " and " + s_name)

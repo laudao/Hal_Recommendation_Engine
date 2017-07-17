@@ -7,7 +7,7 @@
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="http://neo4j-contrib.github.io/developer-resources/language-guides/assets/css/main.css">
-	<title>HAL Documents</title>
+	<title>Laura's Documents</title>
 </head>
 
 <body>
@@ -39,7 +39,7 @@
 	</div>
 </div>
 
-<div class="row" id="main-layout">
+<div class="row main-layout">
 	<div class="col-md-5">
 		<div class="panel panel-default">
 			<div class="panel-heading">Search Results</div>
@@ -50,21 +50,6 @@
 					<tbody>
 					</tbody>
 				</table>
-			</div>
-		</div>
-		<div class="panel panel-default">
-			<div class="panel-heading" id="title">Details</div>
-			<div class="row" id="div-informations">
-				<div class="col-sm-7 col-md-7">
-					<h4>General informations</h4>
-					<ul id="informations">
-					</ul>
-				</div>
-				<div class="col-md-5 col-sm-5">
-					<h4>Topics</h4> 
-					<ul id="topics">	
-					</ul>
-				</div>
 			</div>
 		</div>
 	</div>
@@ -79,27 +64,57 @@
 						<thead>
 							<tr>
 								<th>Recommended Documents</th>
-									<tbody>
-									</tbody>
 							<tr>
 						</thead>
+						<tbody>
+						</tbody>
 					</table>
 					<table class="table table-striped table-hover" id="authors-recommendations">
 						<thead>
 							<tr>
 								<th>Recommended Authors</th>
-									<tbody>
-									</tbody>
 							<tr>
 						</thead>
+						<tbody>
+						</tbody>
 					</table>
 				</div>
 			</div>
 		</div>
 	</div>
 </div>
+<div class="row main-layout">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading" id="title">Details</div>
+			<div class="row" id="div-informations">
+				<div class="col-sm-7 col-md-7">
+					<h4>General informations</h4>
+					<table class="table table-striped" id="informations">
+					</table>
+				</div>
+				<div class="col-md-5 col-sm-5">
+					<h4>Topics</h4> 
+					<div id="topics">	
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
 
-<div id="graph-topic-layout">
+
+<div class="row" id="graph-topic-layout">
+	<div class="col-md-1 col-sm-1" id="topics-info-container">
+		<table class="table table-striped table-hover" id="topics-info">
+			<thead>
+				<tr>
+					<tbody>
+					</tbody>
+				<tr>
+			</thead>
+		</table>
+	</div>
 </div>
 
 <style type="text/css">
@@ -148,16 +163,37 @@
 		height: 11%;
 	}
 
-	#graph {
-		height: 78%;
+	#graph, #reco {
+		max-height: 50%;
 	}
 	#div-search-results {
 		max-height: 50%;
 		overflow-y: scroll;
 	}
 	#div-informations {
-		max-height: 18%;
+		max-height: 20%;
 		overflow-y: scroll;
+	}
+	#topics-info-container {
+		position: absolute;
+		z-index: -1;
+	}
+	#reco {
+		overflow-y: scroll;	
+	}
+	.topic-div {
+		/* cursor: pointer; */
+	    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	    font-size: 13px;
+	    background-color: #9195a0;
+	    color: white;
+	    margin: 4px;
+	    padding: 3px 7px 3px 7px;
+	    border-radius: 16px;
+	}
+	#topics {
+		display: flex;
+	    flex-wrap: wrap;
 	}
 </style>
 </style>
@@ -168,6 +204,7 @@
 
 	$(function() {
 			var nodeRadius = 50,
+				nodeRadiusTopic = 30,
 				linkStrength = 0.05,
 				linkDistance = 300;
 
@@ -204,7 +241,7 @@
 			  .enter().append("svg:marker")    // This section adds in the arrows
 				.attr("id", String)
 				.attr("viewBox", "0 -5 10 10")
-				.attr("refX", 10 + nodeRadius)
+				.attr("refX", nodeRadiusTopic)
 				.attr("refY", 0)
 				.attr("markerWidth", 10)
 				.attr("markerHeight", 10)
@@ -274,11 +311,7 @@
 				    .html(function(d) {
 				    	var name = d.title.split(" ");
 				    	return '<tspan x=0 dy="-3">' + name.join('</tspan><tspan x=0 dy="15">') + '</tspan>';
-				    });/*
-				  .click(function(d) {
-						showRecommendedAuthors(d.title);
-				  });
-				//*/
+				    });
 
 				node.filter(function (d) { 
 						return (d.label == "institution" || d.label == "laboratory" || d.label == "department" || d.label == "researchteam");
@@ -435,10 +468,17 @@
 					.data(graph.nodes).enter()
 					.append("g")
 					.call(force.drag);
-				// html title attribute
+				
 
 				node.append("circle")
-					.attr("r", nodeRadius)
+					.attr("r", nodeRadiusTopic)
+					.on("click", function(data){
+				    	var t = $("#topics-info").empty();
+
+						data.words.forEach(function(words) {
+							$("<tr><td>" + words + "</td></tr>").appendTo(t);
+						});
+				    })
 					.attr("class", function(d) {
 						return "node " + d.label;
 					});
@@ -452,18 +492,9 @@
 				    .style("font-size", "10px")
 				    .attr("dx", ".35em")
 				    .html(function(d) {
-				    	return '<tspan x=0 dy="-3">' + d.words.join('</tspan><tspan x=0 dy="15">') + '</tspan>';
+				    	word = [d.words[0]];
+				    	return '<tspan x=0 dy="-3">' + word.join('</tspan><tspan x=0 dy="15">') + '</tspan>';
 				    });
-			//		.append("title")
-
-			//	node.filter(function (d) { 
-			//			return d.label == "topic";
-			//		})
-					/*
-				  .click(function(d) {
-						showRecommendedAuthors(d.title);
-				  });
-				//*/
 
 				link.append("title")
 					.text(function(d) {
@@ -501,13 +532,14 @@
 		function swapLayout(){
 			if (layout == 0){
 				layout = 1;
-				$("#main-layout").hide();
+				$(".main-layout").hide();
 				$("#graph-topic-layout").show();
 				display_subgraph_topic("/topics_graph");
 			}
 			else if (layout == 1){
 				layout = 0;
-				$("#main-layout").show();
+				$("#topics-info").hide();
+				$(".main-layout").show();
 				$("#graph-topic-layout").hide();
 			}
 
@@ -522,16 +554,26 @@
 
 
 					$("#title").text(data.title);
-					var $info = $("#informations").empty();
-					$info.append($("<li>" + "docid: " + data.docid + "</li>"));
-					//$info.append($("<li>" + "abstract " + data.abstract + "</li>"));
-					$info.append($("<li>" + "keywords: " + data.keywords + "</li>"));
-					$info.append($("<li>" + "type: " + data.type + "</li>"));
-					$info.append($("<li>" + "publication date: " + data.pub_date + "</li>"));
-					$info.append($("<li>" + "language: " + data.language + "</li>"));
 
-					data.authors.forEach(function(authors) {
-						$info.append($("<li>" + authors.name + " / " + authors.quality + "</li>"));
+
+					var $info = $("#informations").empty();
+					authors_string = data.authors.slice(1).reduce(function (a, b) { return a + ', ' + b.name; }, data.authors[0].name);
+
+					$("<tr><td>Doc id</td><td>" + data.docid + "</td></tr>").appendTo($info)
+					$("<tr><td>Keywords</td><td>" + data.keywords.join(", ")  + "</td></tr>").appendTo($info)
+					$("<tr><td>Type</td><td>" + data.type  + "</td></tr>").appendTo($info)
+					$("<tr><td>Publication date</td><td>" + data.pub_date + "</td></tr>").appendTo($info)
+					$("<tr><td>Language</td><td>" + data.language  + "</td></tr>").appendTo($info)
+					$("<tr><td>Authors</td><td>" + authors_string  + "</td></tr>").appendTo($info)
+					//$("<tr><td>Abstract</td><td>" + data.abstract  + "</td></tr>").appendTo($info)
+
+
+
+					var $topics_list = $("#topics").empty();
+					data.topics[0].words.forEach(function(words) {
+						if (words != null){
+							$topics_list.append($("<div class='topic-div'>" + words + "</div>"));
+						}
 					});
 				}, "json");
 			return false;
@@ -543,24 +585,36 @@
 					if (!data)
 						return;
 
+
 					$("#title").text(data.name);
 					var $info = $("#informations").empty();
-					$info.append($("<li>" + "Articles : " + "</li>"));
 
+					$info.append($("<tr><th>Articles</th></tr>"));
 					data.articles.forEach(function(articles) {
-						$info.append($("<li>" + articles.title + "</li>"));
+						$info.append($("<tr><td>" + articles.title + "</td></tr>"));
 					});
 
-					$info.append($("<li>" + "Structures: " + "</li>"));
+					$info.append($("<tr><th>Structures</th></tr>"));
 					data.structures.forEach(function(structures) {
-						$info.append($("<li>" + " - " + structures.struct_name + "</li>"));
+						$info.append($("<tr><td>" + structures.struct_name + "</td></tr>"));
 					});
+
 
 					var $topics_list = $("#topics").empty();
+					var topics_all = data.topics.reduce(function (table, topic) {
+						return table.concat(topic.words)
+					}, []);
 
-					data.topics.forEach(function(topics) {
-						$topics_list.append($("<li>" + topics.words + "</li>"));
+					topics_all = Array.from(new Set(topics_all));
+
+
+					topics_all.forEach(function(words) {
+						if (words != null){
+							$topics_list.append($("<div class='topic-div'>" + words + "</div>"));
+						}
 					});
+
+
 
 					var t = $("table#docs-recommendations tbody").empty();
 					data.recommended_docs.forEach(function(recommended_docs) {
@@ -589,21 +643,30 @@
 					display_subgraph_structure("/structure_graph/" + data.name);
 
 					$("#title").text(data.name);
-					var $info = $("#informations").empty();
-					$info.append($("<li>" + "id: " + data.id + "</li>"));
-					$info.append($("<li>" + "name: " + data.name + "</li>"));
-					$info.append($("<li>" + "acronym: " + data.acronym + "</li>"));
-					$info.append($("<li>" + "country: " + data.country + "</li>"));
-					$info.append($("<li>" + "type: " + data.type + "</li>"));
 
+					var $info = $("#informations").empty();
+					$("<tr><td>Id</td><td>" + data.id + "</td></tr>").appendTo($info)
+					$("<tr><td>Name</td><td>" + data.name  + "</td></tr>").appendTo($info)
+					if (data.acronym != 0)
+						$("<tr><td>Acronym</td><td>" + data.acronym  + "</td></tr>").appendTo($info)
+
+					$("<tr><td>Country</td><td>" + data.country + "</td></tr>").appendTo($info)
+					$("<tr><td>Type</td><td>" + data.type  + "</td></tr>").appendTo($info)
+					
 					var $topics_list = $("#topics").empty();
 
-					data.topics.forEach(function(topics) {
-						$topics_list.append($("<li>" + topics.words + "</li>"));
+					var topics_all = data.topics.reduce(function (table, topic) {
+						return table.concat(topic.words)
+					}, []);
+
+					topics_all = Array.from(new Set(topics_all));
+
+					topics_all.forEach(function(words) {
+						if (words != null){
+							$topics_list.append($("<div class='topic-div'>" + words + "</div>"));
+						}
 					});
-//					data.authors.forEach(function(authors) {
-//						$info.append($("<li>" + authors.name + " / " + authors.quality + "</li>"));
-					//});
+
 				}, "json");
 			return false;
 		}

@@ -80,6 +80,14 @@ def get_article(title):
 		)
 	row = results.next() 
 
+	results_topics = graph.run(
+		'MATCH (d:Article {title: {title}}) '
+		'OPTIONAL MATCH (t)<-[:RELATED_TOPICS]-(d) '
+		'RETURN collect(distinct [t.sign_words]) as topics '
+		'LIMIT 1', {"title":title}
+		)
+	row_topics = results_topics.next()
+
 	return {"title": row['title'], 
 					"docid": row['docid'],
 					"abstract": row['abstract'],
@@ -87,6 +95,7 @@ def get_article(title):
 					"type": row['article_type'],
 					"pub_date": row['pub_date'],
 					"language": row['language'],
+					"topics": [dict(zip(("words",), topic)) for topic in row_topics['topics']],
 					"authors": [dict(zip(("name", "quality"), auth)) for auth in row['authors']]}
 
 @get("/article_graph/<title>")
@@ -245,13 +254,13 @@ def get_structure(name):
 		'RETURN collect([p.struct_name, p.struct_acronym, labels(p)[0]]) as parents '
 		'LIMIT 1', {"name": name}
 		)
+
 	results_topics = graph.run(
 		'MATCH (s {struct_name: {name}}) '
-		'OPTIONAL MATCH (s)<-[:BELONGS_TO]-()<-[:WRITTEN_BY]-()-[:RELATED_TOPICS]->(t) '
+		'OPTIONAL MATCH (t)<-[:RELATED_TOPICS]-()-[:WRITTEN_BY]->(a:Author)-[:BELONGS_TO]->(s) '
 		'RETURN collect(distinct [t.sign_words]) as topics '
-		'LIMIT 1', {"name": name}
+		'LIMIT 1', {"name":name}
 		)
-
 	print(results_children.data())
 	print(results_parents.data())
 	row_children = results_children.current() 
@@ -260,6 +269,7 @@ def get_structure(name):
 	print(row_children)
 	print(row_parents)
 	print(row_topics)
+
 	return {"name": row_children['name'], 
 					"id": row_children['id'],
 					"acronym": row_children['acronym'],

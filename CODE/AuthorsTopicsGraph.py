@@ -189,13 +189,44 @@ class AuthorsTopicsGraph:
 						break
 
 		return max_topic, max_weight
-		
+	
+	""" link article to most relevant topic """
+	def create_link_doc_topic(self, graph, doc):
+		title = doc.title
+		docid = doc.docid
+		language = doc.language
+		topic_id = None
+		max_weight = 0
+
+		if (language == self.topic_language):
+			""" if article doesn't have an abstract, can't link it to any topic """
+			if doc.abstract == []:
+				print("Can't link doc " + str(docid) + " to any topics because it doesn't have an abstract")
+				return 
+			else:
+				abstract = doc.abstract
+			if doc.keywords == []:
+				keywords = ""
+			else:
+				keywords = ' '.join(doc.keywords)
+			text = self.get_valid_text(title, abstract, keywords)
+			if text != "":
+				topic_id, weight = self.getMostRelevantTopic(graph, text)
+			
+				topic = Topic.select(graph, topic_id).first()
+				graph.run("MATCH (a:Article), (t:Topic) WHERE a.docid = " + str(docid) + " AND t.topic_id = " + str(topic_id) + " CREATE (a)-[r:RELATED_TOPICS {weight: " + str(weight) + "}]->(t)")
+				graph.push(doc)
+				graph.push(topic)
+				print("topic " + str(topic_id) + " and doc " + str(docid) + " have been linked")
+		else:
+			print("Can't link " + str(docid) + " to any topic because languages are different")
+
 
 	def link_doc_topics(self):
 		authenticate("localhost:7474", "neo4j", "stage")
 		graph = Graph("http://localhost:7474/db/data/")
 
-		f = open('topics/added_topics.txt', 'r')
+		f = open('topics/added_topicsAuthorsGraph.txt', 'r')
 		added_topics = int(f.readline())
 		f.close()
 
@@ -211,48 +242,32 @@ class AuthorsTopicsGraph:
 			""" check if article is already linked to a topic """
 			link_exists = ((graph.run("MATCH (a:Article)-[r:RELATED_TOPICS]-(t:Topic) WHERE a.docid = " +str(docid) + " RETURN COUNT(r)")).data())[0]['COUNT(r)']
 
-			if link_exists > 0 and added_topics:
-				print("Deleted relationship between doc " + str(docid) + " and topic")
-				graph.run('MATCH (d:Article)-[r:RELATED_TOPICS]->(t:Topic) WHERE d.docid = ' + str(docid) + ' DELETE r')
-				graph.push(doc)
+		#	""" article is linked to a topic and topics have been added """
+		#	if link_exists > 0 and added_topics:
+		#		print("Deleted relationship between doc " + str(docid) + " and topic")
+		#		graph.run('MATCH (d:Article)-[r:RELATED_TOPICS]->(t:Topic) WHERE d.docid = ' + str(docid) + ' DELETE r')
+		#		graph.push(doc)
+		
+			""" topics have been added """
+			if added_topics:
+				""" article is already related to a topic, delete relationship """
+				if link_exists > 0:
+					print("Deleted relationship between doc " + str(docid) + " and topic")
+					graph.run('MATCH (d:Article)-[r:RELATED_TOPICS]->(t:Topic) WHERE d.docid = ' + str(docid) + ' DELETE r')
+					#graph.push(doc)
+		
+				""" link to more relevant topic """ 
+				self.create_link_doc_topic(graph, doc)
 				
-			""" article is not linked to any topic or topics have been added """
-			if link_exists == 0 or added_topics == 1:
-				title = doc.title
-				language = doc.language
-				topic_id = None
-				max_weight = 0
-
-				if (language == self.topic_language):
-					if doc.abstract == []:
-						print("Can't link doc " + str(docid) + " to any topics because it doesn't have an abstract")
-						continue
-					else:
-						abstract = doc.abstract
-					if doc.keywords == []:
-						keywords = ""
-					else:
-						keywords = ' '.join(doc.keywords)
-					text = self.get_valid_text(title, abstract, keywords)
-			#		print(abstract)
-			#		print(keywords)
-			#		print(title)
-			#		print(text)
-					if text != "":
-						topic_id, weight = self.getMostRelevantTopic(graph, text)
-					
-						topic = Topic.select(graph, topic_id).first()
-						graph.run("MATCH (a:Article), (t:Topic) WHERE a.docid = " + str(docid) + " AND t.topic_id = " + str(topic_id) + " CREATE (a)-[r:RELATED_TOPICS {weight: " + str(weight) + "}]->(t)")
-						graph.push(doc)
-						graph.push(topic)
-						print("topic " + str(topic_id) + " and doc " + str(docid) + " have been linked")
-				else:
-					print("Can't link " + str(docid) + " to any topic because languages are different")
 			else:
-				print("Article " + str(docid) + " is already linked to a topic")
+				""" no topic has been added but article is not linked to any topic """
+				if link_exists == 0:
+					self.create_link_doc_topic(graph, doc)
+				else:			
+					print("Article " + str(docid) + " is already linked to a topic")
 		
 		""" indicate that every relationship is up to date """
-		f = open('topics/added_topics.txt', 'w')
+		f = open('topics/added_topicsAuthorsGraph.txt', 'w')
 		f.write('0')
 		f.close()
 
