@@ -59,13 +59,15 @@ class RecommendationGraph:
 				""" link authors """
 				a2 = Author.select(graph).where('_.auth_name = "' + row[0] + '"').first()
 	
+				if a2.auth_name in authors:
+					continue
+
 				graph.run('MATCH (a1:Author), (a2:Author) WHERE a1.auth_name = "' + a1.auth_name + '" AND a2.auth_name = "' + a2.auth_name + '" CREATE (a1)-[r:RECOMMENDED_AUTHORS {weight: ' + str(row[1]) + '}]->(a2)')
 		#		print("Linking " + a1.auth_name + " and " + a2.auth_name)
 				graph.push(a2)
 		#		graph.push(a1)
 	
-				if a2.auth_name not in authors:
-					authors.append(a2.auth_name)
+				authors.append(a2.auth_name)
 	
 			graph.push(a1)
 			print(authors)
@@ -88,14 +90,16 @@ class RecommendationGraph:
 			for row in df.itertuples():
 				""" link article and author """
 				doc = Article.select(graph, int(row[0])).first()
+				
+				if row[1] in docs:
+					continue
 
 				graph.run('MATCH (a:Author), (d:Article) WHERE a.auth_name = "' + a.auth_name + '" AND d.docid = '+ str(doc.docid) + ' CREATE (a)-[r:RECOMMENDED_DOCS {weight: ' + str(row[4]) + '}]->(d)')
 		#		print("Linking " + a.auth_name + " and article " + doc.title)
 #				graph.push(a)
 				graph.push(doc)
 
-				if row[1] not in docs:
-					docs.append(row[1])
+				docs.append(row[1])
 
 			graph.push(a)
 			print(docs)
@@ -125,7 +129,7 @@ class RecommendationGraph:
 				if link_exists > 0:
 					print("Deleted recommendations for " + a1.auth_name)
 					graph.run('MATCH (a:Author)-[r:RECOMMENDED_DOCS]->(d:Article) WHERE a.auth_name = "' + a1.auth_name + '" DELETE r')
-#					graph.push(a1)
+					graph.push(a1)
 				
 				""" create new recommendations"""
 				self.link_recommended_authors(graph, a1)
@@ -164,7 +168,7 @@ class RecommendationGraph:
 				if link_exists > 0:
 					print("Deleted recommendations for " + a.auth_name)
 					graph.run('MATCH (a:Author)-[r:RECOMMENDED_DOCS]->(d:Article) WHERE a.auth_name = "' + a.auth_name + '" DELETE r')
-#					graph.push(a)
+					graph.push(a)
 
 				""" create new recommendations """
 				self.link_recommended_docs(graph, a)

@@ -28,8 +28,7 @@ def get_search_article():
 		results = graph.run(
 	  	"MATCH (article:Article) "
 	  	"WHERE article.title =~ {title} "
-	  	"RETURN article "
-	  	"LIMIT 20", {"title": "(?i).*" + q + ".*"})
+	  	"RETURN article", {"title": "(?i).*" + q + ".*"})
 		response.content_type = "application/json"
 		return json.dumps([{"article": dict(row["article"])} for row in results])
 
@@ -43,8 +42,7 @@ def get_search_author():
 		results = graph.run(
 	  	"MATCH (author:Author) "
 	  	"WHERE author.auth_name =~ {name} "
-	  	"RETURN author "
-	  	"LIMIT 20", {"name": "(?i).*" + q + ".*"})
+	  	"RETURN author", {"name": "(?i).*" + q + ".*"})
 		response.content_type = "application/json"
 		return json.dumps([{"author": dict(row["author"])} for row in results])
 
@@ -58,8 +56,7 @@ def get_search_structure():
 		results = graph.run(
 	  	"MATCH (structure) "
 	  	"WHERE structure.struct_name =~ {name} "
-	  	"RETURN structure "
-	  	"LIMIT 20", {"name": "(?i).*" + q + ".*"})
+	  	"RETURN structure", {"name": "(?i).*" + q + ".*"})
 		response.content_type = "application/json"
 		return json.dumps([{"structure": dict(row["structure"])} for row in results])
 
