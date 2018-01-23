@@ -16,7 +16,6 @@ class AuthorsGraph:
 		self.struct = struct
 		self.struct_id = struct_id
 		self.struct_type = struct_type
-#		self.authors = authors
 
 	@property
 	def field(self):
@@ -33,10 +32,6 @@ class AuthorsGraph:
 	@property
 	def struct_type(self):
 		return self.__struct_type
-
-#	@property
-#	def authors(self):
-#		return self.__authors
 
 	@field.setter
 	def field(self, x):
@@ -288,8 +283,3 @@ class AuthorsGraph:
 				
 			graph.push(doc)
 
-#authorsGraph = AuthorsGraph("id", 408080)
-#authorsGraph.create_graph()
-#print(authorsGraph.struct)
-#print(authorsGraph.struct_id)
-#print(authorsGraph.struct_type)

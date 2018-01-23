@@ -313,19 +313,6 @@
 				    	return '<tspan x=0 dy="-3">' + name.join('</tspan><tspan x=0 dy="15">') + '</tspan>';
 				    });
 
-				// node.filter(function (d) { 
-				// 		return (d.label == "article");
-				// 	})
-				// 	.append("text")
-				//     .attr("x", "50%")
-				//     .attr("text-anchor", "middle")
-				//     .style("font-size", "5px")
-				//     .attr("dx", ".35em")
-				//     .html(function(d) {
-				//     	var name = d.title.split(" ");
-				//     	return '<tspan x=0 dy="-3">' + name.join('</tspan><tspan x=0 dy="15">') + '</tspan>';
-				//     });
-
 
 				node.filter(function (d) { 
 						return (d.label == "institution" || d.label == "laboratory" || d.label == "department" || d.label == "researchteam");
@@ -711,9 +698,6 @@
 					})
 			});
 
-		//	$("#reco-graph-container .panel-heading").text("Graph")
-		//	$("#graph").show()
-		//	$("#reco").hide()
 		};
 
 		callbackAuthor = function (data) {
@@ -729,9 +713,6 @@
 					});
 			});
 
-		//	$("#reco-graph-container .panel-heading").text("Recommendations")
-		//	$("#graph").hide()
-		//	$("#reco").show()
 		};
 
 		callbackStructure = function (data) {
@@ -753,9 +734,6 @@
 					});
 			});
 
-		//	$("#reco-graph-container .panel-heading").text("Graph")
-		//	$("#graph").show()
-		//	$("#reco").hide()
 		};
 
 		function search() {

@@ -171,33 +171,4 @@ class ModelLDA:
 			x = ldamodel.print_topics(num_topics=self.nb_topics, num_words=self.nb_word)  # recover topics
 			pprint.pprint(x)
 
-#filename = "rech.txt"
-#page = PageHAL.create_page_file(filename)
-##print()
-#
-#obj = ModelLDA(page, 8, 40, 5)
-#ldamodel, doc_term_matrix, dic = obj.extract_lda_topics()
-#print(ldamodel)
-#print(ldamodel.show_topics(formatted=False))
-#ex = ['PRIMARY', 'OBJECTIVES:', 'Awake', 'surgeries', 'of', 'slow-growing', 'tumours', 'invading', 'the', 'brain', 'and', 'guided', 'by', 'direct', 'electrical', 'stimulation', 'induce', 'major', 'brain', 'reorganizations', 'accompanied', 'with', 'slight', 'impairments', 'post-operatively.', 'In', 'most', 'cases,', 'these', 'deficits', 'are', 'so', 'slight', 'after', 'a', 'few', 'days', 'that', 'they', 'are', 'often', 'not', 'detectable', 'on', 'classical', 'neuropsychological', 'evaluations.', 'Consequently,', 'this', 'study', 'investigated', 'whether', 'simple', 'visuo-manual', 'reaction', 'time', 'paradigms', 'would', 'sign', 'some', 'level', 'of', 'functional', 'asymmetries', 'between', 'both', 'hemispheres.', 'Importantly,', 'the', 'visual', 'stimulus', 'was', 'located', 'in', 'the', 'saggital', 'plane', 'in', 'order', 'to', 'limit', 'attentional', 'biases', 'and', 'to', 'focus', 'mainly', 'on', 'the', 'inter-hemispheric', 'asymmetry.', 'METHODS', 'AND', 'PROCEDURES:', 'Three', 'patients', '(aged', '41,', '59', 'and', '59', 'years)', 'after', 'resections', 'in', 'parietal', 'regions', 'and', 'a', 'control', 'group', '(age\u2009=\u200944,', 'SD\u2009=\u20096.9)', 'were', 'compared', 'during', 'simple', 'uni-', 'and', 'bimanual', 'reaction', 'times', '(RTs).', 'MAIN', 'OUTCOMES', 'AND', 'RESULTS:', 'Longer', 'RTs', 'were', 'observed', 'for', 'the', 'contralesional', 'compared', 'to', 'the', 'ipsilesional', 'hand', 'in', 'the', 'unimanual', 'condition.', 'This', 'asymmetry', 'was', 'reversed', 'for', 'the', 'bimanual', 'condition', 'despite', 'longer', 'RTs.', 'CONCLUSION', 'AND', 'CLINICAL', 'IMPLICATIONS:', 'Reaction', 'time', 'paradigms', 'are', 'useful', 'in', 'these', 'patients', 'to', 'monitor', 'more', 'precisely', 'their', 'functional', 'deficits,', 'especially', 'their', 'level', 'of', 'functional', 'asymmetry,', 'and', 'to', 'understand', 'brain', '(re)organization', 'following', 'slow-growing', 'lesions.']
 
-#bow = ldamodel.id2word.doc2bow(ex)
-#print(len(bow))
-#doc_topics, word_topics, phi_values = ldamodel.get_document_topics(bow, per_word_topics=True)
-#print(bow)
-#print(word_topics)
-#print(doc_topics)
-
-#print(type(ldamodel))
-#print(type(doc_term_matrix))
-#print(type(dic))
-#print(dic)
-#print(doc_term_matrix)
-#obj.print_topic()
-#obj.visualisation()
-#
-#obj.language = "fr"
-#
-#print(obj.language)
-#obj.print_topics()
-#obj.visualisation()
