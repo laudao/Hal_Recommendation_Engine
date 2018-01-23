@@ -7,7 +7,7 @@
 import json
 
 from bottle import get, run, request, response, static_file
-from GraphObjects import *
+from src.GraphObjects import *
 
 authenticate("localhost:7474", "neo4j", "stage")
 graph = Graph("http://localhost:7474/db/data/")

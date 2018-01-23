@@ -217,8 +217,4 @@ class TopicCreation:
 		return TopicCreation(files, nb_passes, nb_topics, nb_words)
 		
 tc = TopicCreation.create()
-#print(tc.files)
-#print(tc.nb_passes)
-#print(tc.nb_topics)
-#print(tc.nb_words)
 

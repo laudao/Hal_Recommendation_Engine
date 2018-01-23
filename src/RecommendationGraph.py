@@ -15,10 +15,6 @@ class RecommendationGraph:
 	def recommendation(self):
 		return self.__recommendation
 
-#	@property
-#	def auth_name(self):
-#		return self.__auth_name
-
 	@recommendation.setter
 	def recommendation(self, x):
 		self.__recommendation = x
@@ -29,17 +25,6 @@ class RecommendationGraph:
 			print("Get top recommended authors")
 			self.getTopAuthors()
 
-#	@auth_name.setter
-#	def auth_name(self, x):
-#		self.__auth_name = x
-#		print(self.auth_name)
-#		if self.recommendation == 1:
-#			print("Get top recommended articles")
-#			self.getTopArticles()
-#		elif self.recommendation == 2:
-#			print("Get top recommended authors")
-#			self.getTopAuthors()
-	
 	def link_recommended_authors(self, graph, a1):
 		""" get authors who have written articles whose topics are similar to those of articles written by a1 """
 		r = graph.run('MATCH (s1)<-[:BELONGS_TO]-(a1:Author)<-[:WRITTEN_BY]-()-[r1:RELATED_TOPICS]->()<-[r2:RELATED_TOPICS]-()-[:WRITTEN_BY]->(a2:Author)-[:BELONGS_TO]->(s2) WHERE a1.auth_name = "' + a1.auth_name + '" AND NOT a1 = a2 AND NOT ((a1)-[:BELONGS_TO]->()<-[:BELONGS_TO]-(a2)) RETURN a2.auth_name, r1.weight, r2.weight')
@@ -63,9 +48,7 @@ class RecommendationGraph:
 					continue
 
 				graph.run('MATCH (a1:Author), (a2:Author) WHERE a1.auth_name = "' + a1.auth_name + '" AND a2.auth_name = "' + a2.auth_name + '" CREATE (a1)-[r:RECOMMENDED_AUTHORS {weight: ' + str(row[1]) + '}]->(a2)')
-		#		print("Linking " + a1.auth_name + " and " + a2.auth_name)
 				graph.push(a2)
-		#		graph.push(a1)
 	
 				authors.append(a2.auth_name)
 	
@@ -95,8 +78,6 @@ class RecommendationGraph:
 					continue
 
 				graph.run('MATCH (a:Author), (d:Article) WHERE a.auth_name = "' + a.auth_name + '" AND d.docid = '+ str(doc.docid) + ' CREATE (a)-[r:RECOMMENDED_DOCS {weight: ' + str(row[4]) + '}]->(d)')
-		#		print("Linking " + a.auth_name + " and article " + doc.title)
-#				graph.push(a)
 				graph.push(doc)
 
 				docs.append(row[1])
@@ -114,7 +95,6 @@ class RecommendationGraph:
 		added_topics = int(f.readline())
 		f.close()
 
-#		a1 = Author.select(graph).where('_.auth_name = "' + self.auth_name + '"').first()
 		r = graph.run('MATCH (a:Author) RETURN a').data()
 
 		for author in r:
@@ -197,16 +177,6 @@ class RecommendationGraph:
 
 		while choice not in range(1, 3):
 			choice = int(input("Invalid input. Please retry\n> "))
-				
-#		print("Enter the author's name")
-#
-#		try:
-#			name = input("> ")
-#		except ValueError:
-#			name = None
-#
-#		while not(name) or type(name) != str:
-#			name = input("Invalid input. Please retry\n> ")
 				
 		if choice == 1:
 			return RecommendationGraph(1)
